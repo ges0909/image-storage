@@ -1,12 +1,12 @@
-package com.valantic.sti;
+package com.valantic.sti.image;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class S3Application {
+public class ImageApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(S3Application.class, args);
+        SpringApplication.run(ImageApplication.class, args);
     }
 }

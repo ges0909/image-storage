@@ -1,0 +1,40 @@
+# Development profile with LocalStack configuration
+aws:
+  region: us-east-1
+  accessKeyId: test
+  secretAccessKey: test
+  s3:
+    endpoint: http://localhost:4566
+
+# LocalStack bucket names
+image:
+  bucket-name: dev-images-bucket
+  thumbnail-bucket-name: dev-thumbnails-bucket
+  cloudfront-domain: http://localhost:4566
+
+# Disable validation for LocalStack
+aws.config.validation.enabled: false
+
+# Debug logging for development
+logging:
+  level:
+    com.valantic.sti.image: DEBUG
+    software.amazon.awssdk: DEBUG
+
+# Server configuration for Kubernetes
+server:
+  address: 0.0.0.0  # Bind to all interfaces, not just localhost
+  port: 8080
+
+# Actuator endpoints for development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # Alle Endpoints für Development
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  server:
+    address: 0.0.0.0  # Actuator auch auf allen Interfaces

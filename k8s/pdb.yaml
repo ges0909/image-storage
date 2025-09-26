@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: s3-playground-pdb
+  namespace: s3-playground
+  labels:
+    app: s3-playground
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: s3-playground
+      component: backend

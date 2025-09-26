@@ -1,13 +1,50 @@
 spring:
   application:
-    name: electora-playground
-  profiles:
-    active: dev
+    name: s3-image-storage
 
-server:
-  port: 8080
+# Image service configuration
+image:
+  bucket-name: ${IMAGE_BUCKET_NAME:images-bucket-dev}
+  thumbnail-bucket-name: ${THUMBNAIL_BUCKET_NAME:thumbnails-bucket-dev}
+  cloudfront-domain: ${CLOUDFRONT_DOMAIN:https://cdn.example.com}
+  kms-key-id: ${KMS_KEY_ID:alias/aws/s3}
+  key-prefix: ${KEY_PREFIX:images}
+  max-file-size: ${MAX_FILE_SIZE:10485760} # 10MB
+  url-expiration-minutes: ${URL_EXPIRATION_MINUTES:15}
+  region: ${AWS_REGION:eu-central-1}
+  thumbnail-sizes:
+    - 150
+    - 300
+    - 600
+  max-results: ${MAX_RESULTS:1000}
+  supported-types:
+    - image/jpeg
+    - image/png
+    - image/webp
 
+# AWS configuration (for local development)
+aws:
+  region: ${AWS_REGION:eu-central-1}
+  accessKeyId: ${AWS_ACCESS_KEY_ID:test}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:test}
+  s3:
+    endpoint: ${AWS_S3_ENDPOINT:}
+
+# Disable AWS config validation for local development
+aws.config.validation.enabled: ${AWS_CONFIG_VALIDATION_ENABLED:false}
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
 logging:
   level:
-    com.valantic.sti: DEBUG
-    org.springframework.web: DEBUG
+    com.valantic.sti.image: DEBUG
+    software.amazon.awssdk: WARN

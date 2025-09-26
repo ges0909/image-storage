@@ -1,0 +1,62 @@
+# 🚫 Docker Build Context Optimization
+
+# Build artifacts
+target/
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README*.md
+docs/
+*.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Docker files (avoid recursion)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Test reports
+test-results/
+coverage/
+*.log
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Maven wrapper (keep for build)
+!.mvn/
+!mvnw
+!mvnw.cmd
+
+# Keep source code and resources
+!src/
+!pom.xml

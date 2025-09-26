@@ -1,0 +1,51 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+trim_trailing_whitespace = true
+
+# Java files
+[*.java]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+insert_final_newline = true
+
+# XML files (Maven, Spring)
+[*.{xml,xsd}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+# YAML files (Spring Boot, Kubernetes)
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+insert_final_newline = true
+
+# Shell scripts
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+
+# Dockerfile
+[Dockerfile]
+indent_style = space
+indent_size = 2

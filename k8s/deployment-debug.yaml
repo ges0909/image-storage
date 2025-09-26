@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-playground-app-debug
+  namespace: s3-playground
+  labels:
+    app: s3-playground-debug
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: s3-playground-debug
+  template:
+    metadata:
+      labels:
+        app: s3-playground-debug
+    spec:
+      containers:
+      - name: app
+        image: s3-playground:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: AWS_ACCESS_KEY_ID
+          value: "test"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "test"
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: IMAGE_BUCKET_NAME
+          value: "dev-images-bucket"
+        - name: THUMBNAIL_BUCKET_NAME
+          value: "dev-thumbnails-bucket"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        # Keine Health Checks für Debugging
+        # livenessProbe: {}
+        # readinessProbe: {}

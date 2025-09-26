@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s3-playground-sa
+  namespace: s3-playground
+  labels:
+    app: s3-playground
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/s3-playground-role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: s3-playground-role
+  namespace: s3-playground
+  labels:
+    app: s3-playground
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: s3-playground-rolebinding
+  namespace: s3-playground
+  labels:
+    app: s3-playground
+subjects:
+- kind: ServiceAccount
+  name: s3-playground-sa
+  namespace: s3-playground
+roleRef:
+  kind: Role
+  name: s3-playground-role
+  apiGroup: rbac.authorization.k8s.io

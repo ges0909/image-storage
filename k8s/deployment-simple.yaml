@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: s3-playground
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-playground-simple
+  namespace: s3-playground
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: s3-playground-simple
+  template:
+    metadata:
+      labels:
+        app: s3-playground-simple
+    spec:
+      containers:
+      - name: app
+        image: s3-playground:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: AWS_ACCESS_KEY_ID
+          value: "test"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "test"
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: IMAGE_BUCKET_NAME
+          value: "dev-images"
+        - name: THUMBNAIL_BUCKET_NAME
+          value: "dev-thumbnails"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-playground-simple-svc
+  namespace: s3-playground
+spec:
+  selector:
+    app: s3-playground-simple
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: NodePort

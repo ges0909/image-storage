@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-service-config
+  namespace: s3-playground
+data:
+  # 🖼️ Image Service Configuration
+  S3_BUCKET_NAME: "dev-images-bucket"
+  S3_THUMBNAIL_BUCKET: "dev-thumbnails-bucket"
+  CLOUDFRONT_DOMAIN: "https://cdn.example.com"
+  MAX_FILE_SIZE_BYTES: "10485760"  # 10MB
+  AWS_REGION: "eu-central-1"
+  
+  # 🍃 Spring Configuration
+  SPRING_PROFILES_ACTIVE: "k8s"
+  LOG_LEVEL: "INFO"
+  AWS_SDK_LOG_LEVEL: "WARN"
+  
+  # 📊 Management Configuration
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
