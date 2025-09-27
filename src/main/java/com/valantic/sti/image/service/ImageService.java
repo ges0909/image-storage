@@ -4,6 +4,7 @@ import com.valantic.sti.image.ImageProperties;
 import com.valantic.sti.image.exception.ImageNotFoundException;
 import com.valantic.sti.image.exception.ImageProcessingException;
 import com.valantic.sti.image.model.*;
+import net.coobird.thumbnailator.Thumbnails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,6 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,8 +23,22 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.List;
 
+/**
+ * Service für die Verwaltung von Bildern in AWS S3.
+ * <p>
+ * Diese Klasse bietet umfassende Funktionalitäten für:
+ * - Upload und Speicherung von Bildern mit KMS-Verschlüsselung
+ * - Automatische Thumbnail-Generierung in verschiedenen Größen
+ * - Metadaten-Verwaltung (Titel, Beschreibung, Tags)
+ * - Versionierung und Wiederherstellung
+ * - Sichere URL-Generierung mit Pre-signed URLs
+ * - Batch-Operationen für bessere Performance
+ *
+ * @author S3 Playground Team
+ * @version 1.0.0
+ * @since 1.0.0
+ */
 @Service
 public class ImageService {
 
@@ -36,12 +50,34 @@ public class ImageService {
     private final S3Presigner s3Presigner;
     private final ImageProperties imageProperties;
 
+    /**
+     * Konstruktor für ImageService.
+     *
+     * @param s3Client        AWS S3 Client für Bucket-Operationen
+     * @param s3Presigner     S3 Presigner für signierte URLs
+     * @param imageProperties Konfigurationseigenschaften für Bilder
+     */
     public ImageService(S3Client s3Client, S3Presigner s3Presigner, ImageProperties imageProperties) {
         this.s3Client = s3Client;
         this.s3Presigner = s3Presigner;
         this.imageProperties = imageProperties;
     }
 
+    /**
+     * Lädt ein Bild hoch und generiert automatisch Thumbnails.
+     * <p>
+     * Das Originalbild wird mit KMS-Verschlüsselung gespeichert und Thumbnails
+     * in den konfigurierten Größen generiert. Alle Metadaten werden als
+     * S3-Object-Metadaten gespeichert.
+     *
+     * @param file        Die hochzuladende Bilddatei
+     * @param title       Titel des Bildes (optional, max. 255 Zeichen)
+     * @param description Beschreibung des Bildes (optional, max. 1000 Zeichen)
+     * @param tags        Liste von Tags (optional, max. 20 Tags)
+     * @return ImageResponse mit Bild-Metadaten und URLs
+     * @throws IllegalArgumentException bei ungültigen Eingabedaten
+     * @throws ImageProcessingException bei S3- oder IO-Fehlern
+     */
     public ImageResponse uploadImage(MultipartFile file, String title, String description, List<String> tags) {
         validateImageFile(file);
         validateInputs(title, description, tags);
@@ -95,6 +131,18 @@ public class ImageService {
         }
     }
 
+    /**
+     * Aktualisiert die Metadaten eines existierenden Bildes.
+     * <p>
+     * Verwendet S3 CopyObject mit REPLACE-Direktive um Metadaten zu aktualisieren,
+     * ohne das Bild selbst zu verändern.
+     *
+     * @param imageId UUID des zu aktualisierenden Bildes
+     * @param request Update-Request mit neuen Metadaten
+     * @return Aktualisierte ImageResponse
+     * @throws ImageNotFoundException   wenn das Bild nicht existiert
+     * @throws ImageProcessingException bei S3-Fehlern
+     */
     public ImageResponse updateImageMetadata(String imageId, ImageUpdateRequest request) {
         validateImageId(imageId);
         validateImageExists(imageId);
@@ -123,12 +171,28 @@ public class ImageService {
         }
     }
 
+    /**
+     * Löscht ein einzelnes Bild inklusive aller Thumbnails.
+     *
+     * @param imageId UUID des zu löschenden Bildes
+     * @throws ImageNotFoundException   wenn das Bild nicht existiert
+     * @throws ImageProcessingException bei Löschfehlern
+     */
     public void deleteImage(String imageId) {
         validateImageId(imageId);
         validateImageExists(imageId);
         batchDeleteImages(List.of(imageId));
     }
 
+    /**
+     * Löscht mehrere Bilder in Batch-Operationen für bessere Performance.
+     * <p>
+     * Sammelt alle zu löschenden Keys (Original + Thumbnails) und führt
+     * Batch-Delete-Operationen durch. Behandelt partielle Fehler graceful.
+     *
+     * @param imageIds Liste der zu löschenden Bild-IDs
+     * @throws ImageProcessingException bei kritischen Löschfehlern
+     */
     public void batchDeleteImages(List<String> imageIds) {
         if (imageIds.isEmpty()) {
             return;
@@ -191,6 +255,17 @@ public class ImageService {
         }
     }
 
+    /**
+     * Ruft die Metadaten eines Bildes ab.
+     * <p>
+     * Verwendet HeadObject für effiziente Metadaten-Abfrage ohne Download
+     * des Bildinhalts.
+     *
+     * @param imageId UUID des Bildes
+     * @return ImageResponse mit allen Metadaten
+     * @throws ImageNotFoundException   wenn das Bild nicht existiert
+     * @throws ImageProcessingException bei S3-Fehlern
+     */
     public ImageResponse getImageMetadata(String imageId) {
         validateImageId(imageId);
         validateImageExists(imageId);
@@ -230,6 +305,19 @@ public class ImageService {
         }
     }
 
+    /**
+     * Generiert eine signierte URL für sicheren Bilddownload.
+     * <p>
+     * Pre-signed URLs ermöglichen temporären Zugriff ohne AWS-Credentials.
+     * Expiration ist auf maximal 15 Minuten begrenzt aus Sicherheitsgründen.
+     *
+     * @param imageId    UUID des Bildes
+     * @param size       Gewünschte Bildgröße
+     * @param expiration Gültigkeitsdauer der URL
+     * @return Signierte URL als String
+     * @throws IllegalArgumentException bei ungültiger Expiration
+     * @throws ImageNotFoundException   wenn das Bild nicht existiert
+     */
     public String generateSignedUrl(String imageId, ImageSize size, Duration expiration) {
         validateImageId(imageId);
         validateImageExists(imageId);
@@ -249,6 +337,17 @@ public class ImageService {
     }
 
 
+    /**
+     * Gibt die CloudFront-URL für ein Thumbnail zurück.
+     * <p>
+     * Thumbnails sind über CloudFront öffentlich zugänglich für bessere Performance.
+     * Für Originalbilder muss generateSignedUrl() verwendet werden.
+     *
+     * @param imageId UUID des Bildes
+     * @param size    Thumbnail-Größe (nicht ORIGINAL)
+     * @return CloudFront-URL für das Thumbnail
+     * @throws IllegalArgumentException wenn size ORIGINAL ist
+     */
     public String getThumbnailUrl(String imageId, ImageSize size) {
         validateImageId(imageId);
         if (size == ImageSize.ORIGINAL) {
@@ -260,6 +359,16 @@ public class ImageService {
         return validateAndBuildCloudFrontUrl(key);
     }
 
+    /**
+     * Durchsucht Bilder basierend auf Suchkriterien.
+     * <p>
+     * Vereinfachte Implementierung mit S3 ListObjects. In Production
+     * sollte OpenSearch/Elasticsearch für erweiterte Suchfunktionen verwendet werden.
+     *
+     * @param request Suchparameter (Filter, Paginierung, Sortierung)
+     * @return SearchResponse mit gefundenen Bildern und Metadaten
+     * @throws ImageProcessingException bei S3-Suchfehlern
+     */
     public SearchResponse searchImages(SearchRequest request) {
         // Simplified implementation - in production use OpenSearch
         try {
@@ -288,11 +397,27 @@ public class ImageService {
         }
     }
 
+    /**
+     * Listet Bilder mit Paginierung auf.
+     *
+     * @param page Seitennummer (0-basiert)
+     * @param size Anzahl Bilder pro Seite
+     * @return Liste von ImageResponse-Objekten
+     */
     public List<ImageResponse> listImages(int page, int size) {
         SearchRequest request = new SearchRequest(null, null, null, page, size, "uploadDate", "desc");
         return searchImages(request).images();
     }
 
+    /**
+     * Ruft alle Versionen eines Bildes ab.
+     * <p>
+     * Nutzt S3 Versioning um Änderungshistorie zu verwalten.
+     *
+     * @param imageId UUID des Bildes
+     * @return Liste aller Versionen mit Metadaten
+     * @throws ImageProcessingException bei Versionierungsfehlern
+     */
     public List<ImageVersion> getImageVersions(String imageId) {
         validateImageExists(imageId);
 
@@ -322,6 +447,17 @@ public class ImageService {
         }
     }
 
+    /**
+     * Stellt eine spezifische Version eines Bildes wieder her.
+     * <p>
+     * Kopiert die gewählte Version als neue aktuelle Version.
+     *
+     * @param imageId   UUID des Bildes
+     * @param versionId ID der wiederherzustellenden Version
+     * @return ImageResponse der wiederhergestellten Version
+     * @throws ImageNotFoundException   wenn Bild oder Version nicht existiert
+     * @throws ImageProcessingException bei Wiederherstellungsfehlern
+     */
     public ImageResponse restoreVersion(String imageId, String versionId) {
         validateImageExists(imageId);
 
@@ -355,6 +491,12 @@ public class ImageService {
         }
     }
 
+    /**
+     * Fügt Tags zu einem Bild hinzu.
+     *
+     * @param imageId UUID des Bildes
+     * @param tags    Liste der hinzuzufügenden Tags
+     */
     public void addTags(String imageId, List<String> tags) {
         ImageResponse current = getImageMetadata(imageId);
         Set<String> updatedTags = new LinkedHashSet<>(current.tags());
@@ -367,6 +509,12 @@ public class ImageService {
         ));
     }
 
+    /**
+     * Entfernt Tags von einem Bild.
+     *
+     * @param imageId UUID des Bildes
+     * @param tags    Liste der zu entfernenden Tags
+     */
     public void removeTags(String imageId, List<String> tags) {
         ImageResponse current = getImageMetadata(imageId);
         List<String> updatedTags = current.tags().stream()
@@ -380,17 +528,39 @@ public class ImageService {
         ));
     }
 
+    /**
+     * Ruft Statistiken über alle Bilder ab.
+     *
+     * @return ImageStats mit Gesamtstatistiken
+     */
     public ImageStats getImageStats() {
         // Simplified implementation
         return new ImageStats(0L, 0L, 0L, 0L, 0.0);
     }
 
+    /**
+     * Ruft Analytics-Daten für ein spezifisches Bild ab.
+     *
+     * @param imageId UUID des Bildes
+     * @return ImageAnalytics mit Nutzungsstatistiken
+     */
     public ImageAnalytics getImageAnalytics(String imageId) {
         // Simplified implementation
         return new ImageAnalytics(imageId, 0L, 0L, LocalDateTime.now(), List.of());
     }
 
-    // Private helper methods
+    // ========================================
+    // Private Helper Methods
+    // ========================================
+
+    /**
+     * Validiert eine hochgeladene Bilddatei.
+     * <p>
+     * Prüft: Dateigröße, Content-Type, Leer-Status
+     *
+     * @param file Zu validierende Datei
+     * @throws IllegalArgumentException bei Validierungsfehlern
+     */
     private void validateImageFile(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
@@ -409,6 +579,12 @@ public class ImageService {
         return contentType != null && imageProperties.supportedTypes().contains(contentType);
     }
 
+    /**
+     * Prüft ob ein Bild in S3 existiert.
+     *
+     * @param imageId UUID des zu prüfenden Bildes
+     * @throws ImageNotFoundException wenn das Bild nicht existiert
+     */
     private void validateImageExists(String imageId) {
         try {
             s3Client.headObject(HeadObjectRequest.builder()
@@ -478,58 +654,49 @@ public class ImageService {
         }
     }
 
+    /**
+     * Generiert Thumbnails in allen konfigurierten Größen.
+     * <p>
+     * Verwendet Thumbnailator für hochwertige Bildverarbeitung mit
+     * automatischer Qualitätsoptimierung und besserer Performance.
+     *
+     * @param imageId     UUID des Bildes
+     * @param imageData   Original-Bilddaten
+     * @param contentType MIME-Type des Bildes
+     * @throws IOException bei Bildverarbeitungsfehlern
+     */
     private void generateThumbnails(String imageId, byte[] imageData, String contentType) throws IOException {
-        BufferedImage original;
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(imageData)) {
-            original = ImageIO.read(bais);
-            if (original == null) {
-                throw new ImageProcessingException("Invalid image data: unable to generate thumbnails");
+        int[] sizes = imageProperties.thumbnailSizes();
+
+        for (int size : sizes) {
+            try (ByteArrayInputStream inputStream = new ByteArrayInputStream(imageData);
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+                // Thumbnailator für hochwertige Skalierung
+                Thumbnails.of(inputStream)
+                    .size(size, size)
+                    .keepAspectRatio(true)
+                    .outputQuality(0.85f)
+                    .outputFormat(getFormatFromContentType(contentType))
+                    .toOutputStream(outputStream);
+
+                String thumbnailKey = "images/" + imageId + "/thumbnail_" + size;
+
+                s3Client.putObject(
+                    PutObjectRequest.builder()
+                        .bucket(imageProperties.thumbnailBucketName())
+                        .key(sanitizeS3Key(thumbnailKey))
+                        .contentType(contentType)
+                        .acl(ObjectCannedACL.PRIVATE)
+                        .serverSideEncryption(ServerSideEncryption.AES256)
+                        .build(),
+                    RequestBody.fromBytes(outputStream.toByteArray())
+                );
             }
         }
-
-        int[] sizes = imageProperties.thumbnailSizes();
-        for (int size : sizes) {
-            BufferedImage thumbnail = resizeImage(original, size);
-            byte[] thumbnailData = imageToBytes(thumbnail, getFormatFromContentType(contentType));
-
-            String thumbnailKey = "images/" + imageId + "/thumbnail_" + size;
-
-            s3Client.putObject(
-                PutObjectRequest.builder()
-                    .bucket(imageProperties.thumbnailBucketName())
-                    .key(sanitizeS3Key(thumbnailKey))
-                    .contentType(contentType)
-                    .acl(ObjectCannedACL.PRIVATE)
-                    .serverSideEncryption(ServerSideEncryption.AES256)
-                    .build(),
-                RequestBody.fromBytes(thumbnailData)
-            );
-        }
     }
 
-    private BufferedImage resizeImage(BufferedImage original, int targetSize) {
-        int width = original.getWidth();
-        int height = original.getHeight();
-
-        double ratio = Math.min((double) targetSize / width, (double) targetSize / height);
-        int newWidth = (int) (width * ratio);
-        int newHeight = (int) (height * ratio);
-
-        BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = resized.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.drawImage(original, 0, 0, newWidth, newHeight, null);
-        g2d.dispose();
-
-        return resized;
-    }
-
-    private byte[] imageToBytes(BufferedImage image, String format) throws IOException {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            ImageIO.write(image, format, baos);
-            return baos.toByteArray();
-        }
-    }
+    // Removed: resizeImage() and imageToBytes() - replaced by Thumbnailator
 
     private String getFormatFromContentType(String contentType) {
         return switch (contentType) {
@@ -600,6 +767,15 @@ public class ImageService {
         }
     }
 
+    /**
+     * Ruft Metadaten für mehrere Bilder in Batch-Operation ab.
+     * <p>
+     * Optimiert Performance durch parallele HeadObject-Requests
+     * statt N+1 Einzelabfragen.
+     *
+     * @param imageIds Liste der Bild-IDs
+     * @return Liste von ImageResponse-Objekten (null-Werte gefiltert)
+     */
     private List<ImageResponse> batchGetImageMetadata(List<String> imageIds) {
         if (imageIds.isEmpty()) {
             return List.of();

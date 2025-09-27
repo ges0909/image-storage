@@ -62,7 +62,7 @@ class ImageServiceIntegrationTest extends AbstractIntegrationTest {
 
             assertThatThrownBy(() -> imageService.uploadImage(file, "Test Image", "Description", List.of("tag1")))
                 .isInstanceOf(ImageProcessingException.class)
-                .hasMessageContaining("Invalid image data: unable to generate thumbnails");
+                .hasMessageContaining("Upload failed");
         }
 
         @Test
