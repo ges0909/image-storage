@@ -17,13 +17,12 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-import static com.valantic.sti.image.testutil.TestConstants.TEST_IMAGE_ID;
-
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
+import static com.valantic.sti.image.testutil.TestConstants.TEST_IMAGE_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,7 +58,7 @@ class ImageServiceTest {
             1000,
             "images"
         );
-        imageService = new ImageService(s3Client, s3Presigner, imageProperties);
+        imageService = new StandardImageService(s3Client, s3Presigner, imageProperties);
     }
 
     @Test

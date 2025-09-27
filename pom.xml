@@ -21,10 +21,10 @@
     <java.version>21</java.version>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
-    
+
     <!-- Dependency Versions -->
     <aws.version>2.34.3</aws.version>
-    <springdoc.version>2.8.13</springdoc.version>
+    <springdoc.version>3.0.0-M1</springdoc.version>
     <thumbnailator.version>0.4.20</thumbnailator.version>
     <testcontainers.version>1.21.3</testcontainers.version>
     <commons-compress.version>1.27.1</commons-compress.version>
@@ -56,6 +56,12 @@
         <artifactId>commons-compress</artifactId>
         <version>${commons-compress.version}</version>
       </dependency>
+      <!-- Global commons-logging exclusion -->
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>99-empty</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -64,12 +70,6 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <!-- AWS S3 SDK -->
@@ -103,12 +103,14 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
     <!-- Testcontainers für Integration Tests -->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+
     <!-- LocalStack Container für S3 Tests -->
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -122,6 +124,38 @@
       <artifactId>thumbnailator</artifactId>
       <version>${thumbnailator.version}</version>
     </dependency>
+    
+    <!-- S3 Transfer Manager for large files -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3-transfer-manager</artifactId>
+    </dependency>
+    
+    <!-- Spring Data JPA for metadata storage -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    
+    <!-- H2 Database for development -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    
+    <!-- Redis for caching -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+    
+    <!-- Micrometer for metrics -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>

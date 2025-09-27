@@ -2,6 +2,8 @@ package com.valantic.sti.image.api;
 
 import com.valantic.sti.image.model.*;
 import com.valantic.sti.image.service.ImageService;
+import com.valantic.sti.image.validation.ValidImageFile;
+import com.valantic.sti.image.validation.ValidUUID;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,8 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import com.valantic.sti.image.validation.ValidImageFile;
-import com.valantic.sti.image.validation.ValidUUID;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -38,14 +38,14 @@ public class ImageController {
     }
 
     // 📤 Upload & Management
-    
+
     /**
      * Uploads a new image with optional metadata and tags.
-     * 
-     * @param file the image file to upload (JPEG, PNG, GIF supported)
-     * @param title optional image title
+     *
+     * @param file        the image file to upload (JPEG, PNG, GIF supported)
+     * @param title       optional image title
      * @param description optional image description
-     * @param tags optional list of tags for categorization
+     * @param tags        optional list of tags for categorization
      * @return created image metadata with generated ID and S3 location
      */
     @Operation(summary = "Upload Image", description = "Upload a new image with optional metadata")
@@ -65,7 +65,7 @@ public class ImageController {
         @RequestParam(required = false) String description,
         @Parameter(description = "Image tags")
         @RequestParam(required = false) List<String> tags) {
-        
+
         ImageResponse response = imageService.uploadImage(file, title, description, tags);
         return ResponseEntity.status(HttpStatus.CREATED)
             .location(URI.create("/api/images/" + response.id()))
@@ -74,7 +74,7 @@ public class ImageController {
 
     /**
      * Updates image metadata (title, description, tags).
-     * 
+     *
      * @param imageId the UUID of the image to update
      * @param request the update request containing new metadata
      * @return updated image metadata
@@ -90,7 +90,7 @@ public class ImageController {
 
     /**
      * Permanently deletes an image and all its versions from S3.
-     * 
+     *
      * @param imageId the UUID of the image to delete
      * @return empty response with 204 No Content status
      */
@@ -101,10 +101,10 @@ public class ImageController {
     }
 
     // 📥 Download & Access
-    
+
     /**
      * Retrieves image metadata including upload date, size, and tags.
-     * 
+     *
      * @param imageId the UUID of the image
      * @return image metadata without the actual file content
      */
@@ -116,9 +116,9 @@ public class ImageController {
 
     /**
      * Generates a time-limited signed URL for secure image download.
-     * 
-     * @param imageId the UUID of the image
-     * @param size the desired image size (ORIGINAL, LARGE, MEDIUM, SMALL, THUMBNAIL)
+     *
+     * @param imageId           the UUID of the image
+     * @param size              the desired image size (ORIGINAL, LARGE, MEDIUM, SMALL, THUMBNAIL)
      * @param expirationMinutes URL validity period (1-15 minutes, default 15)
      * @return signed download URL with expiration info
      */
@@ -138,9 +138,9 @@ public class ImageController {
 
     /**
      * Gets a public thumbnail URL for the specified image size.
-     * 
+     *
      * @param imageId the UUID of the image
-     * @param size the thumbnail size (SMALL, MEDIUM, LARGE)
+     * @param size    the thumbnail size (SMALL, MEDIUM, LARGE)
      * @return public thumbnail URL (no expiration)
      */
     @GetMapping("/{imageId}/thumbnails/{size}")
@@ -153,16 +153,16 @@ public class ImageController {
     }
 
     // 🔍 Search & Discovery
-    
+
     /**
      * Searches images with advanced filtering and pagination support.
-     * 
-     * @param query text search in title and description
-     * @param tags filter by specific tags
-     * @param contentType filter by MIME type (image/jpeg, image/png, etc.)
-     * @param page page number (0-based)
-     * @param size page size (1-100, default 20)
-     * @param sortBy sort field (uploadDate, title, size)
+     *
+     * @param query         text search in title and description
+     * @param tags          filter by specific tags
+     * @param contentType   filter by MIME type (image/jpeg, image/png, etc.)
+     * @param page          page number (0-based)
+     * @param size          page size (1-100, default 20)
+     * @param sortBy        sort field (uploadDate, title, size)
      * @param sortDirection sort order (asc, desc)
      * @return paginated search results with metadata
      */
@@ -191,7 +191,7 @@ public class ImageController {
 
     /**
      * Lists all images with basic pagination.
-     * 
+     *
      * @param page page number (0-based, default 0)
      * @param size page size (default 20)
      * @return list of image metadata
@@ -206,10 +206,10 @@ public class ImageController {
     }
 
     // 📚 Version Management
-    
+
     /**
      * Retrieves all versions of an image (S3 versioning).
-     * 
+     *
      * @param imageId the UUID of the image
      * @return list of all image versions with timestamps
      */
@@ -221,8 +221,8 @@ public class ImageController {
 
     /**
      * Restores a specific version of an image as the current version.
-     * 
-     * @param imageId the UUID of the image
+     *
+     * @param imageId   the UUID of the image
      * @param versionId the UUID of the version to restore
      * @return updated image metadata after restoration
      */
@@ -236,12 +236,12 @@ public class ImageController {
     }
 
     // 🏷️ Tag Management
-    
+
     /**
      * Adds new tags to an existing image.
-     * 
+     *
      * @param imageId the UUID of the image
-     * @param tags list of tags to add
+     * @param tags    list of tags to add
      * @return empty response with 200 OK status
      */
     @PostMapping("/{imageId}/tags")
@@ -255,9 +255,9 @@ public class ImageController {
 
     /**
      * Removes specific tags from an image.
-     * 
+     *
      * @param imageId the UUID of the image
-     * @param tags list of tags to remove
+     * @param tags    list of tags to remove
      * @return empty response with 200 OK status
      */
     @DeleteMapping("/{imageId}/tags")
@@ -270,10 +270,10 @@ public class ImageController {
     }
 
     // 📊 Analytics & Stats
-    
+
     /**
      * Retrieves global image storage statistics.
-     * 
+     *
      * @return overall stats including total images, storage usage, and popular tags
      */
     @GetMapping("/stats")
@@ -284,7 +284,7 @@ public class ImageController {
 
     /**
      * Retrieves analytics data for a specific image.
-     * 
+     *
      * @param imageId the UUID of the image
      * @return analytics including download count, view history, and access patterns
      */

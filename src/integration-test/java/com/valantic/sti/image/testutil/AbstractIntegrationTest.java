@@ -25,7 +25,7 @@ public abstract class AbstractIntegrationTest {
     @Container
     protected static LocalStackContainer localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.0"))
         .withServices(S3)
-        .withReuse(true);
+        .withReuse(true); // container-sharing for tests
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

@@ -1,0 +1,110 @@
+### Upload Image
+POST http://localhost:8080/api/images
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="sunset.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/sunset.jpg
+--boundary
+Content-Disposition: form-data; name="title"
+
+Sunset Beach
+--boundary
+Content-Disposition: form-data; name="description"
+
+Beautiful sunset at the beach
+--boundary
+Content-Disposition: form-data; name="tags"
+
+nature
+--boundary
+Content-Disposition: form-data; name="tags"
+
+sunset
+--boundary
+Content-Disposition: form-data; name="tags"
+
+beach
+--boundary--
+
+### Update Image Metadata
+PUT http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000
+Content-Type: application/json
+
+{
+  "title": "Golden Hour Beach",
+  "description": "Stunning golden hour at the beach with perfect lighting",
+  "tags": ["nature", "golden-hour", "beach", "photography"]
+}
+
+### Delete Image
+DELETE http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000
+
+### Get Image Metadata
+GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000
+
+### Get Download URL
+GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/download?size=LARGE&expirationMinutes=10
+
+### Get Thumbnail URL
+GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/thumbnails/MEDIUM
+
+### Search Images
+GET http://localhost:8080/api/images/search?query=beach&tags=nature,sunset&contentType=image%2Fjpeg&page=0&size=10&sortBy=uploadDate&sortDirection=desc
+
+### List All Images
+GET http://localhost:8080/api/images?page=0&size=20
+
+### Get Image Versions
+GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/versions
+
+### Restore Version
+POST http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/versions/660f9511-f3ac-52e5-b827-557766551111/restore
+
+### Add Tags
+POST http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/tags
+Content-Type: application/json
+
+["landscape", "golden-hour", "professional"]
+
+### Remove Tags
+DELETE http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/tags?tags=sunset,beach
+
+### Get Image Statistics
+GET http://localhost:8080/api/images/stats
+
+### Get Image Analytics
+GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/analytics
+
+### Batch Delete Images
+DELETE http://localhost:8080/api/batch/images
+Content-Type: application/json
+
+[
+  "550e8400-e29b-41d4-a716-446655440000",
+  "660f9511-f3ac-52e5-b827-557766551111",
+  "770g0622-g4bd-63f6-c938-668877662222"
+]
+
+### Health Check
+GET http://localhost:8080/actuator/health
+
+### S3 Health Check
+GET http://localhost:8080/actuator/health/s3
+
+### Application Info
+GET http://localhost:8080/actuator/info
+
+### Metrics
+GET http://localhost:8080/actuator/metrics
+
+### Prometheus Metrics
+GET http://localhost:8080/actuator/prometheus
+
+### Swagger UI
+GET http://localhost:8080/swagger-ui.html
+
+### OpenAPI Specification
+GET http://localhost:8080/api-docs

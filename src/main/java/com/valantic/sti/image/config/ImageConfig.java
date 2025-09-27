@@ -63,4 +63,19 @@ public class ImageConfig {
         
         return builder.build();
     }
+
+    @Bean
+    public software.amazon.awssdk.services.s3.S3AsyncClient s3AsyncClient(ImageProperties properties,
+                                                                           AwsCredentialsProvider credentialsProvider,
+                                                                           @Value("${aws.s3.endpoint:}") String endpoint) {
+        var builder = software.amazon.awssdk.services.s3.S3AsyncClient.builder()
+            .region(Region.of(properties.region()))
+            .credentialsProvider(credentialsProvider);
+        
+        if (!endpoint.isEmpty()) {
+            builder.endpointOverride(URI.create(endpoint));
+        }
+        
+        return builder.build();
+    }
 }

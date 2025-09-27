@@ -4,6 +4,7 @@ import com.valantic.sti.image.exception.ImageProcessingException;
 import com.valantic.sti.image.model.ImageResponse;
 import com.valantic.sti.image.model.ImageSize;
 import com.valantic.sti.image.service.ImageService;
+import com.valantic.sti.image.service.StandardImageService;
 import com.valantic.sti.image.testutil.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,7 +48,7 @@ class ImageServiceIntegrationTest extends AbstractIntegrationTest {
             .build();
 
         ImageProperties imageProperties = createTestImageProperties();
-        imageService = new ImageService(s3Client, s3Presigner, imageProperties);
+        imageService = new StandardImageService(s3Client, s3Presigner, imageProperties);
     }
 
     @Nested

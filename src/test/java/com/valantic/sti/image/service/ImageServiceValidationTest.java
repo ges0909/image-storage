@@ -14,10 +14,10 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-import static com.valantic.sti.image.testutil.TestConstants.*;
-
 import java.time.Duration;
 
+import static com.valantic.sti.image.testutil.TestConstants.NON_EXISTENT_ID;
+import static com.valantic.sti.image.testutil.TestConstants.TEST_IMAGE_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,7 +41,7 @@ class ImageServiceValidationTest {
     void setUp() {
         ImageProperties imageProperties = new ImageProperties(
             "test-bucket",
-            "test-thumbnails", 
+            "test-thumbnails",
             "test-kms-key",
             "https://cdn.example.com",
             10485760L,
@@ -52,7 +52,7 @@ class ImageServiceValidationTest {
             1000,
             "images"
         );
-        imageService = new ImageService(s3Client, s3Presigner, imageProperties);
+        imageService = new StandardImageService(s3Client, s3Presigner, imageProperties);
     }
 
     @Test
