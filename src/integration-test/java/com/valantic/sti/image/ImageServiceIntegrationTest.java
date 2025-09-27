@@ -15,42 +15,38 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-import static com.valantic.sti.image.testutil.TestConstants.*;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 
+import static com.valantic.sti.image.testutil.TestConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 class ImageServiceIntegrationTest extends AbstractIntegrationTest {
 
-    private S3Client s3Client;
-    private S3Presigner s3Presigner;
     private ImageService imageService;
-    private ImageProperties imageProperties;
 
     @BeforeEach
     void setUp() {
         var credentialsProvider = createCredentialsProvider();
         var region = Region.of(localstack.getRegion().toLowerCase(Locale.ROOT));
 
-        s3Client = S3Client.builder()
+        S3Client s3Client = S3Client.builder()
             .endpointOverride(localstack.getEndpointOverride(S3))
             .credentialsProvider(credentialsProvider)
             .region(region)
             .build();
 
-        s3Presigner = S3Presigner.builder()
+        S3Presigner s3Presigner = S3Presigner.builder()
             .endpointOverride(localstack.getEndpointOverride(S3))
             .credentialsProvider(credentialsProvider)
             .region(region)
             .build();
 
-        imageProperties = createTestImageProperties();
+        ImageProperties imageProperties = createTestImageProperties();
         imageService = new ImageService(s3Client, s3Presigner, imageProperties);
     }
 
