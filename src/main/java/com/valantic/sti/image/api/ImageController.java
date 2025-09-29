@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -95,6 +96,7 @@ public class ImageController {
      * @return empty response with 204 No Content status
      */
     @DeleteMapping("/{imageId}")
+    @PreAuthorize("hasRole('ADMIN') or @imageService.isOwner(#imageId, authentication.name)")
     public ResponseEntity<Void> deleteImage(@PathVariable @ValidUUID String imageId) {
         imageService.deleteImage(imageId);
         return ResponseEntity.noContent().build();

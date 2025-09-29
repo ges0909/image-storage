@@ -1,66 +1,66 @@
 spring:
-  application:
-    name: s3-image-storage
+  main:
+    allow-bean-definition-overriding: true
+  
+  profiles:
+    active: dev
 
-  # Database configuration
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:test_db}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
-
+    url: jdbc:postgresql://localhost:5432/s3playground
+    username: postgres
+    password: postgres
   jpa:
-    open-in-view: false
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-    show-sql: ${SPRING_JPA_SHOW_SQL:false}
-    properties:
-      hibernate:
-        format_sql: true
+      ddl-auto: validate
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
-# Image service configuration
-image:
-  bucket-name: ${IMAGE_BUCKET_NAME:images-bucket-dev}
-  thumbnail-bucket-name: ${THUMBNAIL_BUCKET_NAME:thumbnails-bucket-dev}
-  cloudfront-domain: ${CLOUDFRONT_DOMAIN:https://cdn.example.com}
-  kms-key-id: ${KMS_KEY_ID:alias/aws/s3}
-  key-prefix: ${KEY_PREFIX:images}
-  max-file-size: ${MAX_FILE_SIZE:10485760} # 10MB
-  url-expiration-minutes: ${URL_EXPIRATION_MINUTES:15}
-  region: ${AWS_REGION:eu-central-1}
-  thumbnail-sizes:
-    - 150
-    - 300
-    - 600
-  max-results: ${MAX_RESULTS:1000}
-  supported-types:
-    - image/jpeg
-    - image/png
-    - image/webp
+---
+# Keycloak Profile
+spring:
+  config:
+    activate:
+      on-profile: keycloak
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: ${KEYCLOAK_CLIENT_ID:image-storage-app}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET:your-client-secret}
+            scope: openid,profile,email,roles
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/image-storage}
+            authorization-uri: ${KEYCLOAK_AUTH_URI:http://localhost:8081/realms/image-storage/protocol/openid-connect/auth}
+            token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8081/realms/image-storage/protocol/openid-connect/token}
+            user-info-uri: ${KEYCLOAK_USERINFO_URI:http://localhost:8081/realms/image-storage/protocol/openid-connect/userinfo}
+            jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8081/realms/image-storage/protocol/openid-connect/certs}
+            user-name-attribute: preferred_username
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/image-storage}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8081/realms/image-storage/protocol/openid-connect/certs}
 
-# AWS configuration (for local development)
-aws:
-  region: ${AWS_REGION:eu-central-1}
-  accessKeyId: ${AWS_ACCESS_KEY_ID:test}
-  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:test}
-  s3:
-    endpoint: ${AWS_S3_ENDPOINT:}
-
-# Disable AWS config validation for local development
-aws.config.validation.enabled: ${AWS_CONFIG_VALIDATION_ENABLED:false}
-
-# Management endpoints
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-
-# Logging
-logging:
-  level:
-    com.valantic.sti.image: DEBUG
-    software.amazon.awssdk: WARN
+---
+# Test Profile
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop

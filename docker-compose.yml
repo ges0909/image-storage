@@ -21,6 +21,34 @@ services:
       timeout: 10s
       retries: 3
 
+  # Keycloak Identity Provider
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: s3-playground-keycloak
+    ports:
+      - "8081:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=keycloak
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_HTTP_ENABLED=true
+    command:
+      - start-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   # Redis Cache
   redis:
     image: redis:7-alpine
@@ -28,12 +56,12 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # PostgreSQL Database
+  # PostgresSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: s3-playground-postgres
@@ -45,11 +73,24 @@ services:
       - POSTGRES_PASSWORD=s3password
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-postgres.sql:/docker-entrypoint-initdb.d/init-postgres.sql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U s3user -d s3playground" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d s3playground" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Keycloak Setup Service
+  keycloak-setup:
+    image: curlimages/curl:latest
+    container_name: s3-playground-keycloak-setup
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./init-keycloak.sh:/init-keycloak.sh:ro
+    command: [ "/bin/sh", "/init-keycloak.sh" ]
+    restart: "no"
 
   # Spring Boot Application
   app:
@@ -60,7 +101,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=dev,keycloak
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_REGION=us-east-1
@@ -68,12 +109,19 @@ services:
       - IMAGE_BUCKET_NAME=dev-images-bucket
       - THUMBNAIL_BUCKET_NAME=dev-thumbnails-bucket
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/s3playground
-      - SPRING_DATASOURCE_USERNAME=s3user
-      - SPRING_DATASOURCE_PASSWORD=s3password
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
+      - KEYCLOAK_CLIENT_ID=image-storage-app
+      - KEYCLOAK_CLIENT_SECRET=your-client-secret
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/image-storage
+      - KEYCLOAK_AUTH_URI=http://localhost:8081/realms/image-storage/protocol/openid-connect/auth
+      - KEYCLOAK_TOKEN_URI=http://keycloak:8080/realms/image-storage/protocol/openid-connect/token
+      - KEYCLOAK_USERINFO_URI=http://keycloak:8080/realms/image-storage/protocol/openid-connect/userinfo
+      - KEYCLOAK_JWK_URI=http://keycloak:8080/realms/image-storage/protocol/openid-connect/certs
     depends_on:
       localstack:
         condition: service_healthy
@@ -81,6 +129,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      keycloak-setup:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health" ]
       interval: 30s

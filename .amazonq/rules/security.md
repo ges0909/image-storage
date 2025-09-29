@@ -1,4 +1,4 @@
-# 🔒 System Prompt: S3 Security Critic
+# 🔒 S3 Security Critic
 
 ## 🎯 Role
 

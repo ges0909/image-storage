@@ -1,4 +1,4 @@
-# 🛠 System Prompt: Java Backend Developer
+# 🛠 Java Backend Developer
 
 ## 🎯 Role
 

@@ -1,5 +1,5 @@
 spring:
-  # PostgreSQL configuration for dev profile
+  # PostgresSQL configuration for dev profile
   datasource:
     url: jdbc:postgresql://localhost:5432/s3playground
     username: s3user

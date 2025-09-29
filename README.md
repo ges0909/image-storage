@@ -13,6 +13,12 @@
 - **Redis 7** for caching
 - **Thumbnailator 0.4.20** for image processing
 
+### Security & Authentication
+- **Spring Security OAuth2** with **Keycloak** integration
+- **JWT Resource Server** for API authentication
+- **Role-based access control** (RBAC)
+- **OpenID Connect** (OIDC) support
+
 ### Performance & Monitoring
 - **Micrometer** for metrics
 - **Spring Boot Actuator** for health checks
@@ -81,10 +87,13 @@ mvn clean verify
 
 ### Local Development Options
 
-#### Option 1: Full Docker Environment (Recommended)
+#### Option 1: Full Docker Environment with Keycloak (Recommended)
 ```bash
-# Start all services (PostgreSQL, Redis, LocalStack, App)
+# Start all services (PostgreSQL, Redis, LocalStack, Keycloak, App)
 docker-compose up --build
+
+# Setup Keycloak realm and client
+./init-keycloak.sh
 
 # View logs
 docker-compose logs -f app
@@ -95,11 +104,14 @@ docker-compose down -v
 
 #### Option 2: Hybrid Development (App local, Services in Docker)
 ```bash
-# Start only database services
+# Without authentication (dev profile only)
 docker-compose up postgres redis localstack -d
-
-# Run app locally with dev profile
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# With authentication (dev + keycloak profiles)
+docker-compose up postgres redis localstack keycloak -d
+./init-keycloak.sh
+mvn spring-boot:run -Dspring-boot.run.profiles=dev,keycloak
 ```
 
 #### Option 3: Docker Only
@@ -120,6 +132,8 @@ docker run -p 8080:8080 \
 - **Application**: http://localhost:8080
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
 - **OpenAPI Docs**: http://localhost:8080/api-docs
+- **Keycloak Admin**: http://localhost:8081 (`admin/admin`)
+- **OAuth2 Login**: http://localhost:8080/oauth2/authorization/keycloak
 
 ### 🏥 Health & Monitoring Endpoints (Actuator)
 
@@ -147,11 +161,12 @@ mvn flyway:validate
 
 ### Spring Profiles
 
-| Profile | Database | Use Case |
-|---------|----------|----------|
-| `dev` | PostgreSQL | Full local development |
-| `k8s` | PostgreSQL | Kubernetes deployment |
-| `test` | H2 in-memory | Unit/Integration tests |
+| Profile | Database | Authentication | Use Case |
+|---------|----------|----------------|----------|
+| `dev` | PostgreSQL | None | Basic local development |
+| `dev,keycloak` | PostgreSQL | Keycloak OAuth2 | Full local development with auth |
+| `k8s` | PostgreSQL | Keycloak OAuth2 | Kubernetes deployment |
+| `test` | H2 in-memory | None | Unit/Integration tests |
 
 ### Environment Variables
 
@@ -164,20 +179,45 @@ mvn flyway:validate
 | `KMS_KEY_ID` | KMS key for encryption | `alias/aws/s3` |
 | `MAX_FILE_SIZE` | Max upload size (bytes) | `10485760` |
 
+### Keycloak Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `KEYCLOAK_CLIENT_ID` | OAuth2 client ID | `image-storage-app` |
+| `KEYCLOAK_CLIENT_SECRET` | OAuth2 client secret | `your-client-secret` |
+| `KEYCLOAK_ISSUER_URI` | Keycloak realm issuer URI | `http://localhost:8081/realms/image-storage` |
+| `KEYCLOAK_AUTH_URI` | Authorization endpoint | Auto-configured |
+| `KEYCLOAK_TOKEN_URI` | Token endpoint | Auto-configured |
+| `KEYCLOAK_USERINFO_URI` | UserInfo endpoint | Auto-configured |
+
 ## 🖼️ API Endpoints
 
+### **Authentication Required**
+All API endpoints require OAuth2 authentication via Keycloak. Use one of:
+- **Browser Login**: http://localhost:8080/oauth2/authorization/keycloak
+- **Bearer Token**: `Authorization: Bearer <JWT_TOKEN>`
+- **API Testing**: Use Swagger UI after OAuth2 login
+
 ### **Optimized Endpoints**
-- `POST /api/images` - **Async upload** with immediate response
+- `POST /api/images` - **Async upload** with immediate response (requires `USER` role)
 - `GET /api/images/search` - **Database-powered** search (90% faster)
 - `GET /api/images/{id}` - **Cached** metadata retrieval
 - `GET /api/images/stats` - **Cached** statistics
 
 ### **Standard Endpoints**
 - `PUT /api/images/{id}` - Update metadata
-- `DELETE /api/images/{id}` - Delete image + thumbnails
+- `DELETE /api/images/{id}` - Delete image + thumbnails (requires `ADMIN` role or ownership)
 - `GET /api/images/{id}/download` - Generate signed URL
 - `GET /api/images/{id}/thumbnails/{size}` - Get thumbnail URL
 - `POST /api/images/{id}/tags` - Add/remove tags
+
+### **Admin Endpoints**
+- `DELETE /api/batch/images` - Batch delete images (requires `ADMIN` role)
+
+### **OAuth2 Endpoints**
+- `GET /api/oauth2/user` - Get authenticated user info
+- `GET /api/oauth2/jwt` - Get JWT token claims
+- `GET /api/oauth2/login` - OAuth2 provider links
 
 ## 📊 Performance Features
 
@@ -337,3 +377,76 @@ securityService.uploadFileWithEncryption("secure-bucket", "secret.txt", data);
 - **MFA for Delete** - Multi-Factor Authentication required
 
 See `bucket-policy-example.json` for complete policy examples.
+
+## 🔐 Authentication & Authorization
+
+### **Keycloak Integration**
+
+The application uses **Keycloak** as OAuth2/OIDC provider for secure authentication and authorization.
+
+#### **Quick Setup**
+```bash
+# Start all services including Keycloak
+docker-compose up -d
+
+# Configure Keycloak automatically
+./init-keycloak.sh
+```
+
+#### **Manual Keycloak Configuration**
+1. **Admin Console**: http://localhost:8081 (`admin/admin`)
+2. **Create Realm**: `image-storage`
+3. **Create Client**: `image-storage-app`
+4. **Create Roles**: `USER`, `ADMIN`, `UPLOADER`
+5. **Create Test User**: `testuser/password`
+
+#### **Authentication Flow**
+```bash
+# 1. Browser Login
+open http://localhost:8080/oauth2/authorization/keycloak
+
+# 2. API Token (Client Credentials)
+curl -X POST http://localhost:8081/realms/image-storage/protocol/openid-connect/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=image-storage-app" \
+  -d "client_secret=your-client-secret"
+
+# 3. Use Token for API Access
+curl -H "Authorization: Bearer <TOKEN>" \
+  http://localhost:8080/api/images/stats
+```
+
+#### **Role-Based Access Control**
+
+| Role | Permissions |
+|------|-------------|
+| **USER** | View images, search, get metadata |
+| **UPLOADER** | Upload images, create thumbnails |
+| **ADMIN** | All permissions, batch operations, delete any image |
+
+#### **Security Features**
+- ✅ **OAuth2/OIDC** standard compliance
+- ✅ **JWT tokens** with role-based claims
+- ✅ **Stateless authentication** for scalability
+- ✅ **Realm and client roles** support
+- ✅ **Automatic token validation** and refresh
+- ✅ **Integration with Spring Security**
+
+### **Development vs Production**
+
+#### **Development (Docker Compose)**
+- **Keycloak**: http://localhost:8081
+- **Application**: http://localhost:8080
+- **Auto-setup**: `init-keycloak.sh`
+- **Test User**: `testuser/password`
+
+#### **Production (Kubernetes)**
+- **External Keycloak** cluster recommended
+- **HTTPS-only** communication
+- **Production-grade** client secrets
+- **RBAC integration** with K8s ServiceAccounts
+
+For detailed setup instructions, see:
+- `README-keycloak-docker.md` - Docker development setup
+- `keycloak-setup.md` - Manual configuration guide
