@@ -35,6 +35,12 @@ class ImageServiceValidationTest {
     @Mock
     private MultipartFile multipartFile;
 
+    @Mock
+    private AsyncImageService asyncImageService;
+
+    @Mock
+    private com.valantic.sti.image.repository.ImageMetadataRepository metadataRepository;
+
     private ImageService imageService;
 
     @BeforeEach
@@ -52,7 +58,7 @@ class ImageServiceValidationTest {
             1000,
             "images"
         );
-        imageService = new StandardImageService(s3Client, s3Presigner, imageProperties);
+        imageService = new ImageService(s3Client, s3Presigner, asyncImageService, metadataRepository, imageProperties);
     }
 
     @Test

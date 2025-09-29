@@ -1,14 +1,21 @@
 package com.valantic.sti.image;
 
+import com.valantic.sti.image.entity.ImageMetadata;
 import com.valantic.sti.image.exception.ImageProcessingException;
 import com.valantic.sti.image.model.ImageResponse;
 import com.valantic.sti.image.model.ImageSize;
+import com.valantic.sti.image.repository.ImageMetadataRepository;
+import com.valantic.sti.image.service.AsyncImageService;
 import com.valantic.sti.image.service.ImageService;
-import com.valantic.sti.image.service.StandardImageService;
 import com.valantic.sti.image.testutil.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockMultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -18,15 +25,25 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 import static com.valantic.sti.image.testutil.TestConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
+@ExtendWith(MockitoExtension.class)
 class ImageServiceIntegrationTest extends AbstractIntegrationTest {
+
+    @Mock
+    private AsyncImageService asyncImageService;
+
+    @Mock
+    private ImageMetadataRepository metadataRepository;
 
     private ImageService imageService;
 
@@ -48,7 +65,7 @@ class ImageServiceIntegrationTest extends AbstractIntegrationTest {
             .build();
 
         ImageProperties imageProperties = createTestImageProperties();
-        imageService = new StandardImageService(s3Client, s3Presigner, imageProperties);
+        imageService = new ImageService(s3Client, s3Presigner, asyncImageService, metadataRepository, imageProperties);
     }
 
     @Nested
@@ -126,6 +143,12 @@ class ImageServiceIntegrationTest extends AbstractIntegrationTest {
     class EmptyBucketOperations {
         @Test
         void searchImages_ShouldReturnEmptyList_WhenNoBucketObjects() {
+            // Mock empty page result from repository
+            Page<ImageMetadata> emptyPage =
+                new PageImpl<>(Collections.emptyList());
+            when(metadataRepository.findBySearchCriteria(any(), any(), any()))
+                .thenReturn(emptyPage);
+
             var searchRequest = new com.valantic.sti.image.model.SearchRequest(
                 "test", null, null, 0, 20, "uploadDate", "desc"
             );
@@ -138,6 +161,12 @@ class ImageServiceIntegrationTest extends AbstractIntegrationTest {
 
         @Test
         void listImages_ShouldReturnEmptyList_WhenNoBucketObjects() {
+            // Mock empty page result from repository (listImages calls searchImages internally)
+            Page<ImageMetadata> emptyPage =
+                new PageImpl<>(Collections.emptyList());
+            when(metadataRepository.findBySearchCriteria(any(), any(), any()))
+                .thenReturn(emptyPage);
+
             List<ImageResponse> result = imageService.listImages(0, 20);
 
             assertThat(result).isEmpty();
@@ -169,8 +198,7 @@ class ImageServiceIntegrationTest extends AbstractIntegrationTest {
             AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey())
         );
     }
-
-
+    
     private MockMultipartFile createMockFile(String filename, String contentType, byte[] content) {
         return new MockMultipartFile("file", filename, contentType, content);
     }

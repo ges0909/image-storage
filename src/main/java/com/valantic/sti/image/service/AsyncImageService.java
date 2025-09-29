@@ -12,7 +12,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.Upload;
 import software.amazon.awssdk.transfer.s3.model.UploadRequest;
@@ -36,10 +38,10 @@ public class AsyncImageService {
     private final ImageMetadataRepository metadataRepository;
     private final ImageProperties imageProperties;
 
-    public AsyncImageService(S3TransferManager transferManager, 
-                           S3AsyncClient s3AsyncClient,
-                           ImageMetadataRepository metadataRepository,
-                           ImageProperties imageProperties) {
+    public AsyncImageService(S3TransferManager transferManager,
+                             S3AsyncClient s3AsyncClient,
+                             ImageMetadataRepository metadataRepository,
+                             ImageProperties imageProperties) {
         this.transferManager = transferManager;
         this.s3AsyncClient = s3AsyncClient;
         this.metadataRepository = metadataRepository;
@@ -51,10 +53,11 @@ public class AsyncImageService {
      */
     @Async
     @Timed("image.upload.async")
-    public CompletableFuture<Void> uploadOriginalAsync(String imageId, byte[] imageData, 
-                                                      String contentType, ImageMetadata metadata) {
+    public CompletableFuture<Void> uploadImage(String imageId, byte[] imageData,
+                                               String contentType,
+                                               ImageMetadata metadata) {
         String key = "images/" + imageId + "/original";
-        
+
         UploadRequest uploadRequest = UploadRequest.builder()
             .putObjectRequest(PutObjectRequest.builder()
                 .bucket(imageProperties.bucketName())
@@ -68,11 +71,11 @@ public class AsyncImageService {
             .build();
 
         Upload upload = transferManager.upload(uploadRequest);
-        
+
         return upload.completionFuture()
             .thenRun(() -> {
                 log.info("Original upload completed for image: {}", imageId);
-                generateThumbnailsAsync(imageId, imageData, contentType, metadata);
+                generateThumbnails(imageId, imageData, contentType, metadata);
             })
             .exceptionally(throwable -> {
                 log.error("Original upload failed for image: {}", imageId, throwable);
@@ -87,22 +90,24 @@ public class AsyncImageService {
      */
     @Async
     @Timed("image.thumbnails.generation")
-    public CompletableFuture<Void> generateThumbnailsAsync(String imageId, byte[] imageData, 
-                                                          String contentType, ImageMetadata metadata) {
+    public CompletableFuture<Void> generateThumbnails(String imageId,
+                                                      byte[] imageData,
+                                                      String contentType,
+                                                      ImageMetadata metadata) {
         return CompletableFuture.runAsync(() -> {
             try {
                 int[] sizes = imageProperties.thumbnailSizes();
-                
+
                 for (int size : sizes) {
                     generateSingleThumbnail(imageId, imageData, contentType, size);
                 }
-                
+
                 // Status auf COMPLETED setzen
                 metadata.setStatus(ImageMetadata.UploadStatus.COMPLETED);
                 metadataRepository.save(metadata);
-                
+
                 log.info("All thumbnails generated for image: {}", imageId);
-                
+
             } catch (Exception e) {
                 log.error("Thumbnail generation failed for image: {}", imageId, e);
                 metadata.setStatus(ImageMetadata.UploadStatus.FAILED);
@@ -112,15 +117,15 @@ public class AsyncImageService {
         });
     }
 
-    private void generateSingleThumbnail(String imageId, byte[] imageData, String contentType, int size) 
-            throws IOException {
-        
+    private void generateSingleThumbnail(String imageId, byte[] imageData, String contentType, int size)
+        throws IOException {
+
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(imageData);
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            
+
             // Thumbnailator mit WebP für bessere Kompression
             String outputFormat = contentType.equals("image/png") ? "png" : "webp";
-            
+
             Thumbnails.of(inputStream)
                 .size(size, size)
                 .keepAspectRatio(true)

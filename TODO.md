@@ -3,4 +3,4 @@
 1. Umstellung auf "Hexagonale Architektur"
 2. Anbindung JaCoCo
 3. Systemprompt für Requirements
-
+4. `generateSingle` vs `generateSingleThumbnail`
