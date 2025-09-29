@@ -20,6 +20,10 @@ dependency-reduced-pom.xml
 *.ipr
 .vscode/
 
+# IntelliJ DataSource files (contain local DB configs)
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -28,3 +32,12 @@ Thumbs.db
 *.jar
 *.war
 *.ear
+
+# Docker & LocalStack
+localstack-data/
+postgres-data/
+redis-data/
+
+# Cache directories
+.cache/
+cache/

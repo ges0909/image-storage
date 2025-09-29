@@ -1,71 +1,25 @@
-# Development profile with LocalStack configuration
-aws:
-  region: us-east-1
-  accessKeyId: test
-  secretAccessKey: test
-  s3:
-    endpoint: http://localhost:4566
-
-# LocalStack bucket names
-image:
-  bucket-name: dev-images-bucket
-  thumbnail-bucket-name: dev-thumbnails-bucket
-  cloudfront-domain: http://localhost:4566
-
-# Disable validation for LocalStack
-aws.config.validation.enabled: false
-
-# Debug logging for development
-logging:
-  level:
-    com.valantic.sti.image: DEBUG
-    software.amazon.awssdk: DEBUG
-
-# Server configuration for Kubernetes
-server:
-  address: 0.0.0.0  # Bind to all interfaces, not just localhost
-  port: 8080
-
-# Actuator endpoints for development
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"  # Alle Endpoints für Development
-  endpoint:
-    health:
-      show-details: always
-      show-components: always
-
-# Database configuration for development
 spring:
+  # PostgreSQL configuration for dev profile
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
+    url: jdbc:postgresql://localhost:5432/s3playground
+    username: s3user
+    password: s3password
+    driver-class-name: org.postgresql.Driver
+
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
+      # Enable JPA auditing
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-  h2:
-    console:
-      enabled: true
 
-# Redis configuration (embedded for development)
-spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
-  server:
-    address: 0.0.0.0  # Actuator auch auf allen Interfaces
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    clean-disabled: false

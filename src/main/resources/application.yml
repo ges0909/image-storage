@@ -2,6 +2,22 @@ spring:
   application:
     name: s3-image-storage
 
+  # Database configuration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:test_db}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+
 # Image service configuration
 image:
   bucket-name: ${IMAGE_BUCKET_NAME:images-bucket-dev}

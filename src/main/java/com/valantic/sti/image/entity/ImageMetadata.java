@@ -1,6 +1,17 @@
 package com.valantic.sti.image.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -15,63 +26,65 @@ import java.util.Set;
 @Entity
 @Table(name = "image_metadata", indexes = {
     @Index(name = "idx_title", columnList = "title"),
-    @Index(name = "idx_content_type", columnList = "contentType"),
-    @Index(name = "idx_upload_date", columnList = "uploadDate"),
-    @Index(name = "idx_file_size", columnList = "fileSize")
+    @Index(name = "idx_content_type", columnList = "content_type"),
+    @Index(name = "idx_created_at", columnList = "created_at"),
+    @Index(name = "idx_file_size", columnList = "file_size")
 })
 @EntityListeners(AuditingEntityListener.class)
 public class ImageMetadata {
 
     @Id
+    @Column(name = "image_id", length = 36)
     private String imageId;
 
-    @Column(nullable = false)
+    @Column(name = "title", nullable = false, length = 255)
     private String title;
 
-    @Column(length = 1000)
+    @Column(name = "description", length = 1000)
     private String description;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "image_tags", joinColumns = @JoinColumn(name = "image_id"))
-    @Column(name = "tag")
+    @Column(name = "tag", length = 100)
     private Set<String> tags;
 
-    @Column(nullable = false)
+    @Column(name = "content_type", nullable = false, length = 50)
     private String contentType;
 
-    @Column(nullable = false)
+    @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
-    @Column(nullable = false)
+    @Column(name = "width", nullable = false)
     private Integer width;
 
-    @Column(nullable = false)
+    @Column(name = "height", nullable = false)
     private Integer height;
 
-    @Column(nullable = false)
+    @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
-    @Column(nullable = false)
+    @Column(name = "uploaded_by", nullable = false, length = 100)
     private String uploadedBy;
 
     @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime uploadDate;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime lastModified;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false, columnDefinition = "upload_status")
     private UploadStatus status = UploadStatus.PROCESSING;
 
     // Constructors
-    public ImageMetadata() {}
+    public ImageMetadata() {
+    }
 
     public ImageMetadata(String imageId, String title, String description, Set<String> tags,
-                        String contentType, Long fileSize, Integer width, Integer height,
-                        String s3Key, String uploadedBy) {
+                         String contentType, Long fileSize, Integer width, Integer height,
+                         String s3Key, String uploadedBy) {
         this.imageId = imageId;
         this.title = title;
         this.description = description;
@@ -85,44 +98,109 @@ public class ImageMetadata {
     }
 
     // Getters and Setters
-    public String getImageId() { return imageId; }
-    public void setImageId(String imageId) { this.imageId = imageId; }
+    public String getImageId() {
+        return imageId;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setImageId(String imageId) {
+        this.imageId = imageId;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getTitle() {
+        return title;
+    }
 
-    public Set<String> getTags() { return tags; }
-    public void setTags(Set<String> tags) { this.tags = tags; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public String getContentType() { return contentType; }
-    public void setContentType(String contentType) { this.contentType = contentType; }
+    public String getDescription() {
+        return description;
+    }
 
-    public Long getFileSize() { return fileSize; }
-    public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public Integer getWidth() { return width; }
-    public void setWidth(Integer width) { this.width = width; }
+    public Set<String> getTags() {
+        return tags;
+    }
 
-    public Integer getHeight() { return height; }
-    public void setHeight(Integer height) { this.height = height; }
+    public void setTags(Set<String> tags) {
+        this.tags = tags;
+    }
 
-    public String getS3Key() { return s3Key; }
-    public void setS3Key(String s3Key) { this.s3Key = s3Key; }
+    public String getContentType() {
+        return contentType;
+    }
 
-    public String getUploadedBy() { return uploadedBy; }
-    public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
 
-    public LocalDateTime getUploadDate() { return uploadDate; }
-    public void setUploadDate(LocalDateTime uploadDate) { this.uploadDate = uploadDate; }
+    public Long getFileSize() {
+        return fileSize;
+    }
 
-    public LocalDateTime getLastModified() { return lastModified; }
-    public void setLastModified(LocalDateTime lastModified) { this.lastModified = lastModified; }
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
 
-    public UploadStatus getStatus() { return status; }
-    public void setStatus(UploadStatus status) { this.status = status; }
+    public Integer getWidth() {
+        return width;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public String getS3Key() {
+        return s3Key;
+    }
+
+    public void setS3Key(String s3Key) {
+        this.s3Key = s3Key;
+    }
+
+    public String getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(String uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public UploadStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UploadStatus status) {
+        this.status = status;
+    }
 
     public enum UploadStatus {
         PROCESSING,

@@ -76,6 +76,20 @@ spec:
           value: "0.0.0.0"
         - name: SERVER_PORT
           value: "8080"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/s3playground"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "s3user"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "s3password"
+        - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+          value: "org.postgresql.Driver"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION
+          value: "true"
         resources:
           requests:
             memory: "256Mi"

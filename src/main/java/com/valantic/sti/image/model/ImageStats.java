@@ -1,10 +1,12 @@
 package com.valantic.sti.image.model;
 
+import java.util.Map;
+
 public record ImageStats(
     long totalImages,
     long totalSizeBytes,
-    long imagesThisMonth,
-    long mostPopularTags,
-    double averageImageSizeBytes
+    Map<String, Long> imagesByContentType,
+    Map<String, Long> imagesByTag,
+    long averageSizeBytes
 ) {
 }

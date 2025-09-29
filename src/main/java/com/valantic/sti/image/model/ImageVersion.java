@@ -4,9 +4,10 @@ import java.time.LocalDateTime;
 
 public record ImageVersion(
     String versionId,
-    LocalDateTime createdDate,
-    String createdBy,
+    String imageId,
+    LocalDateTime createdAt,
     long sizeBytes,
-    boolean isLatest
+    boolean isLatest,
+    String etag
 ) {
 }

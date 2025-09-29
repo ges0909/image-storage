@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.Set;
+
 @ConfigurationProperties(prefix = "image")
 @Validated
 public record ImageProperties(
@@ -18,7 +20,7 @@ public record ImageProperties(
     @NotBlank String region,
     @Positive @Max(60) int urlExpirationMinutes,
     @NotNull int[] thumbnailSizes,
-    @NotNull java.util.Set<String> supportedTypes,
+    @NotNull Set<String> supportedTypes,
     @Positive @Max(1000) int maxResults,
     @NotBlank String keyPrefix
 ) {
@@ -29,6 +31,10 @@ public record ImageProperties(
                 throw new IllegalArgumentException("Thumbnail sizes must be positive");
             }
         }
+    }
+
+    public Set<String> allowedContentTypes() {
+        return supportedTypes;
     }
 }
 

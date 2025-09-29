@@ -2,7 +2,16 @@ package com.valantic.sti.image.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.valantic.sti.image.ImageProperties;
-import com.valantic.sti.image.model.*;
+import com.valantic.sti.image.model.ImageAnalytics;
+import com.valantic.sti.image.model.ImageDimensions;
+import com.valantic.sti.image.model.ImageResponse;
+import com.valantic.sti.image.model.ImageSize;
+import com.valantic.sti.image.model.ImageStats;
+import com.valantic.sti.image.model.ImageUpdateRequest;
+import com.valantic.sti.image.model.ImageUrls;
+import com.valantic.sti.image.model.ImageVersion;
+import com.valantic.sti.image.model.SearchRequest;
+import com.valantic.sti.image.model.SearchResponse;
 import com.valantic.sti.image.service.ImageService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,8 +32,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ImageController.class)
 @ContextConfiguration(classes = {ImageController.class, ImageControllerTest.TestConfig.class})
@@ -186,7 +201,13 @@ class ImageControllerTest {
     class Analytics {
         @Test
         void getImageStats_ShouldReturn200() throws Exception {
-            ImageStats stats = new ImageStats(10L, 1048576L, 5L, 3L, 104857.6);
+            ImageStats stats = new ImageStats(
+                10L,
+                1048576L,
+                java.util.Map.of("image/jpeg", 5L),
+                java.util.Map.of("nature", 3L),
+                104857L
+            );
             when(imageService.getImageStats()).thenReturn(stats);
 
             mockMvc.perform(get("/api/images/stats"))
@@ -213,7 +234,6 @@ class ImageControllerTest {
         @Test
         void addTags_ShouldReturn200_WhenValidRequest() throws Exception {
             // Arrange
-            String imageId = "12345678-1234-1234-1234-123456789012";
             List<String> tags = List.of("new-tag1", "new-tag2");
 
             mockMvc.perform(post("/api/images/{imageId}/tags", VALID_UUID)
@@ -253,8 +273,8 @@ class ImageControllerTest {
         // Arrange
         String imageId = "12345678-1234-1234-1234-123456789012";
         List<ImageVersion> versions = List.of(
-            new ImageVersion("v1", LocalDateTime.now(), "user", 1024L, false),
-            new ImageVersion("v2", LocalDateTime.now(), "user", 2048L, true)
+            new ImageVersion("v1", VALID_UUID, LocalDateTime.now(), 1024L, false, "etag1"),
+            new ImageVersion("v2", VALID_UUID, LocalDateTime.now(), 2048L, true, "etag2")
         );
 
         when(imageService.getImageVersions(imageId)).thenReturn(versions);
@@ -395,8 +415,8 @@ class ImageControllerTest {
         @Test
         void getImageVersions_ShouldReturn200_WhenValidRequest() throws Exception {
             List<ImageVersion> versions = List.of(
-                new ImageVersion("v1", NOW, "user", 1024L, false),
-                new ImageVersion("v2", NOW, "user", 2048L, true)
+                new ImageVersion("v1", VALID_UUID, NOW, 1024L, false, "etag1"),
+                new ImageVersion("v2", VALID_UUID, NOW, 2048L, true, "etag2")
             );
             when(imageService.getImageVersions(VALID_UUID)).thenReturn(versions);
 

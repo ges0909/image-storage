@@ -36,7 +36,12 @@ Content-Type: application/json
 {
   "title": "Golden Hour Beach",
   "description": "Stunning golden hour at the beach with perfect lighting",
-  "tags": ["nature", "golden-hour", "beach", "photography"]
+  "tags": [
+    "nature",
+    "golden-hour",
+    "beach",
+    "photography"
+  ]
 }
 
 ### Delete Image
@@ -52,7 +57,8 @@ GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/downlo
 GET http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/thumbnails/MEDIUM
 
 ### Search Images
-GET http://localhost:8080/api/images/search?query=beach&tags=nature,sunset&contentType=image%2Fjpeg&page=0&size=10&sortBy=uploadDate&sortDirection=desc
+GET http://localhost:8080/api/images/search?query=beach&tags=nature,sunset&contentType=image%2Fjpeg&page=0&size=10&
+    sortBy=uploadDate&sortDirection=desc
 
 ### List All Images
 GET http://localhost:8080/api/images?page=0&size=20
@@ -67,7 +73,11 @@ POST http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/versi
 POST http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/tags
 Content-Type: application/json
 
-["landscape", "golden-hour", "professional"]
+[
+  "landscape",
+  "golden-hour",
+  "professional"
+]
 
 ### Remove Tags
 DELETE http://localhost:8080/api/images/550e8400-e29b-41d4-a716-446655440000/tags?tags=sunset,beach
