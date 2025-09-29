@@ -21,6 +21,9 @@ kubectl apply -f configmap.yaml
 echo "🔑 Creating Secrets..."
 kubectl apply -f secret.yaml
 
+echo "🗄️ Creating PostgreSQL..."
+kubectl apply -f postgres.yaml
+
 echo "🌐 Creating NetworkPolicy..."
 kubectl apply -f networkpolicy.yaml
 
@@ -38,6 +41,9 @@ kubectl apply -f hpa.yaml
 
 echo "🛡️ Creating PodDisruptionBudget..."
 kubectl apply -f pdb.yaml
+
+echo "⏳ Waiting for PostgreSQL to be ready..."
+kubectl rollout status deployment/postgres -n ${NAMESPACE} --timeout=120s
 
 echo "⏳ Waiting for deployment to be ready..."
 kubectl rollout status deployment/s3-playground-app -n ${NAMESPACE} --timeout=300s
