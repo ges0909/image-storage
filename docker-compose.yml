@@ -12,9 +12,14 @@ services:
       - DEBUG=1
       - PERSISTENCE=1
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - S3_SKIP_SIGNATURE_VALIDATION=1
+      - AWS_DEFAULT_REGION=eu-central-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack-data:/var/lib/localstack"
+      - "./init-s3-buckets.sh:/etc/localstack/init/ready.d/init-s3-buckets.sh"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:4566/health" ]
       interval: 30s

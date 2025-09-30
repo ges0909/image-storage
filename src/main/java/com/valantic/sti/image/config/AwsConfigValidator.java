@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 
 
 @Component
-@ConditionalOnProperty(name = "aws.config.validation.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "aws.config.validation.enabled", havingValue = "true")
 public class AwsConfigValidator {
 
     private static final Logger log = LoggerFactory.getLogger(AwsConfigValidator.class);

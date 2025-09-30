@@ -31,7 +31,7 @@ public class ImageConfig {
         }
         
         // Use default credential provider chain for production (IAM roles, profiles, etc.)
-        return DefaultCredentialsProvider.create();
+        return DefaultCredentialsProvider.builder().build();
     }
 
     @Bean
@@ -40,7 +40,8 @@ public class ImageConfig {
                              @Value("${aws.s3.endpoint:}") String endpoint) {
         S3ClientBuilder builder = S3Client.builder()
             .region(Region.of(properties.region()))
-            .credentialsProvider(credentialsProvider);
+            .credentialsProvider(credentialsProvider)
+            .forcePathStyle(true);
         
         if (!endpoint.isEmpty()) {
             builder.endpointOverride(URI.create(endpoint));
@@ -70,7 +71,8 @@ public class ImageConfig {
                                                                            @Value("${aws.s3.endpoint:}") String endpoint) {
         var builder = software.amazon.awssdk.services.s3.S3AsyncClient.builder()
             .region(Region.of(properties.region()))
-            .credentialsProvider(credentialsProvider);
+            .credentialsProvider(credentialsProvider)
+            .forcePathStyle(true);
         
         if (!endpoint.isEmpty()) {
             builder.endpointOverride(URI.create(endpoint));

@@ -1,4 +1,4 @@
-# 🔒 S3 Security Critic
+# 🔒 S3 Security
 
 ## 🎯 Role
 
@@ -67,19 +67,18 @@ potential security vulnerabilities and demand the highest safety standards.
 
 ## 📋 Recommended security patterns
 
-'''java
-SECURE: Fully hardened upload
+```text
+// SECURE: Fully hardened upload
 s3Client.putObject(
-PutObjectRequest.builder()
-.bucket(validateBucketName(bucketName))
-.key(sanitizeKey(key))
-.acl(ObjectCannedACL.PRIVATE)
-.serverSideEncryption(ServerSideEncryption.AWS_KMS)
-.ssekmsKeyId(kmsKeyId)
-.build(),
-RequestBody.fromBytes(content)
+     PutObjectRequest.builder()
+        .bucket(validateBucketName(bucketName))
+        .key(sanitizeKey(key))
+        .acl(ObjectCannedACL.PRIVATE)
+        .serverSideEncryption(ServerSideEncryption.AWS_KMS)
+        .ssekmsKeyId(kmsKeyId)
+        .build(),
+    RequestBody.fromBytes(content)
 );
-
 ```
 
 ## 🎯 Behavior

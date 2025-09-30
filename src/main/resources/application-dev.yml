@@ -23,3 +23,20 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     clean-disabled: false
+
+# Image configuration
+image:
+  bucket-name: ${IMAGE_BUCKET_NAME:images-bucket-dev}
+  thumbnail-bucket-name: ${THUMBNAIL_BUCKET_NAME:thumbnails-bucket-dev}
+  kms-key-id: ${KMS_KEY_ID:alias/aws/s3}
+  cloudfront-domain: ${CLOUDFRONT_DOMAIN:}
+  max-file-size: ${MAX_FILE_SIZE:10485760}
+  region: ${AWS_REGION:eu-central-1}
+  url-expiration-minutes: ${URL_EXPIRATION_MINUTES:15}
+  thumbnail-sizes: [150, 300, 600]
+  supported-types:
+    - image/jpeg
+    - image/png
+    - image/webp
+  max-results: ${MAX_RESULTS:1000}
+  key-prefix: ${KEY_PREFIX:images}

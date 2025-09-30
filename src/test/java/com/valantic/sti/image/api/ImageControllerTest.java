@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
@@ -43,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ImageController.class)
 @ContextConfiguration(classes = {ImageController.class, ImageControllerTest.TestConfig.class})
+@Import(TestSecurityConfig.class)
 class ImageControllerTest {
 
     private static final String VALID_UUID = "12345678-1234-1234-1234-123456789012";
@@ -234,8 +236,6 @@ class ImageControllerTest {
         @Test
         void addTags_ShouldReturn200_WhenValidRequest() throws Exception {
             // Arrange
-            List<String> tags = List.of("new-tag1", "new-tag2");
-
             mockMvc.perform(post("/api/images/{imageId}/tags", VALID_UUID)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(List.of("new-tag1", "new-tag2"))))
