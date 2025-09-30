@@ -1,17 +1,19 @@
--- Create application user
-CREATE USER "isUser" WITH PASSWORD 'isPassword';
-GRANT ALL PRIVILEGES ON DATABASE "ImageStorage" TO "isUser";
-
--- Create Keycloak database and user
+-- Create keycloak database first
 CREATE DATABASE keycloak;
+
+-- Create application user 'isUser'
+CREATE USER "isUser" WITH PASSWORD 'isPassword';
+
+-- Create keycloak user 'keycloak'
 CREATE USER keycloak WITH PASSWORD 'keycloak';
+
+-- Grant database-level privileges
+GRANT ALL PRIVILEGES ON DATABASE "ImageStorage" TO "isUser";
 GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
 
--- Fix schema ownership for both databases
-\c "ImageStorage";
+-- Connect to each database to set the schema owner correctly
+\c "ImageStorage"
 ALTER SCHEMA public OWNER TO "isUser";
-GRANT ALL ON SCHEMA public TO "isUser";
 
-\c keycloak;
+\c keycloak
 ALTER SCHEMA public OWNER TO keycloak;
-GRANT ALL ON SCHEMA public TO keycloak;

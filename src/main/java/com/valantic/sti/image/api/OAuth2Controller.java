@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/oauth2")
@@ -20,9 +21,9 @@ public class OAuth2Controller {
     @GetMapping("/user")
     public Map<String, Object> user(@AuthenticationPrincipal OAuth2User principal) {
         return Map.of(
-            "name", principal.getAttribute("name"),
-            "email", principal.getAttribute("email"),
-            "picture", principal.getAttribute("picture"),
+            "name", Objects.requireNonNull(principal.getAttribute("name")),
+            "email", Objects.requireNonNull(principal.getAttribute("email")),
+            "picture", Objects.requireNonNull(principal.getAttribute("picture")),
             "authorities", principal.getAuthorities()
         );
     }

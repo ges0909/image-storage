@@ -16,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    @Profile("!dev")
+    @Profile("!dev & !test")
     public SecurityFilterChain keycloakFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
@@ -42,7 +42,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile("dev")
+    @Profile("dev | test")
     public SecurityFilterChain devFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
@@ -51,7 +51,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile("!dev")
+    @Profile("!dev & !test")
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakJwtAuthenticationConverter());

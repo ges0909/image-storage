@@ -38,7 +38,7 @@ mvn spring-boot:run
 - `AWS_ACCESS_KEY_ID` - AWS Access Key (default: "test")
 - `AWS_SECRET_ACCESS_KEY` - AWS Secret Key (default: "test")  
 - `AWS_REGION` - AWS Region (default: "eu-central-1")
-- `IMAGE_BUCKET_NAME` - S3 Bucket für Images (default: "images-bucket-dev")
+- `IMAGE_BUCKET_NAME` - S3 Bucket für Images (default: "dev-images-bucket")
 - `CLOUDFRONT_DOMAIN` - CloudFront Domain (default: "https://cdn.example.com")
 - `AWS_CONFIG_VALIDATION_ENABLED` - AWS Validierung (default: false)
 

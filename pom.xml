@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.6</version>
+    <version>3.3.0</version>
     <relativePath/>
   </parent>
 
@@ -24,13 +24,14 @@
 
     <!-- Dependency Versions -->
     <aws.version>2.34.3</aws.version>
-    <springdoc.version>2.5.0</springdoc.version>
+    <springdoc.version>2.6.0</springdoc.version>
     <thumbnailator.version>0.4.20</thumbnailator.version>
     <testcontainers.version>1.21.3</testcontainers.version>
     <commons-compress.version>1.27.1</commons-compress.version>
     <mockito.version>5.20.0</mockito.version>
     <maven-wrapper.version>3.2.0</maven-wrapper.version>
     <maven.version>3.9.6</maven.version>
+    <postgresql.version>42.7.8</postgresql.version>
   </properties>
 
   <dependencyManagement>
@@ -253,9 +254,9 @@
         <groupId>org.flywaydb</groupId>
         <artifactId>flyway-maven-plugin</artifactId>
         <configuration>
-          <url>jdbc:postgresql://localhost:5432/s3playground</url>
-          <user>s3user</user>
-          <password>s3password</password>
+          <url>jdbc:postgresql://localhost:5432/ImageStorage</url>
+          <user>isUser</user>
+          <password>isPassword</password>
           <locations>
             <location>classpath:db/migration</location>
           </locations>

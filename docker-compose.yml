@@ -20,6 +20,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack-data:/var/lib/localstack"
+      - "./init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:4566/health" ]
       interval: 30s
@@ -42,16 +43,22 @@ services:
       - KC_HOSTNAME_STRICT=false
       - KC_HOSTNAME_STRICT_HTTPS=false
       - KC_HTTP_ENABLED=true
-    command:
-      - start-dev
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "Waiting for database to be ready..."
+        sleep 10
+        echo "Starting Keycloak..."
+        exec /opt/keycloak/bin/kc.sh start-dev
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test: [ "CMD-SHELL", "timeout 3 bash -c '</dev/tcp/localhost/8080' || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
       start_period: 60s
 
   # Redis Cache
@@ -85,42 +92,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # S3 Buckets Setup Service
-  s3-setup:
-    image: amazon/aws-cli:latest
-    container_name: image-storage-s3-setup
-    environment:
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_DEFAULT_REGION=eu-central-1
-    depends_on:
-      localstack:
-        condition: service_healthy
-    entrypoint: [ "/bin/sh", "-c" ]
-    command: >
-      aws --endpoint-url=http://localstack:4566 s3 mb s3://dev-images-bucket &&
-      aws --endpoint-url=http://localstack:4566 s3 mb s3://dev-thumbnails-bucket &&
-      echo "S3 buckets created successfully!"
-    restart: "no"
-
-  # Keycloak Setup Service
-  keycloak-setup:
-    image: curlimages/curl:latest
-    container_name: image-storage-keycloak-setup
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    volumes:
-      - ./init-keycloak.sh:/init-keycloak.sh:ro
-    command: [ "/bin/sh", "/init-keycloak.sh" ]
-    restart: "no"
-
   # Spring Boot Application
   image-storage:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: image-storage
+    container_name: image-storage-app
     ports:
       - "8080:8080"
     environment:
@@ -154,10 +131,6 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-      s3-setup:
-        condition: service_completed_successfully
-      keycloak-setup:
-        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health" ]
       interval: 30s

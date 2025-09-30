@@ -6,8 +6,8 @@ import com.valantic.sti.image.service.AsyncImageService;
 import com.valantic.sti.image.testutil.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -16,13 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @IntegrationTest
 class ActuatorHealthIntegrationTest extends AbstractIntegrationTest {
 
-    @MockitoBean
+    @Mock
     private SecurityConfig securityConfig;
 
-    @MockitoBean
+    @Mock
     private AsyncImageService asyncImageService;
 
-    @MockitoBean
+    @Mock
     private ImageMetadataRepository metadataRepository;
 
     @LocalServerPort
