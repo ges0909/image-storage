@@ -1,10 +1,11 @@
 # 🐳 Docker Compose for Local Development
 
 services:
+
   # LocalStack for S3 simulation
   localstack:
     image: localstack/localstack:3.0
-    container_name: s3-playground-localstack
+    container_name: image-storage-localstack
     ports:
       - "4566:4566"
     environment:
@@ -19,7 +20,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack-data:/var/lib/localstack"
-      - "./init-s3-buckets.sh:/etc/localstack/init/ready.d/init-s3-buckets.sh"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:4566/health" ]
       interval: 30s
@@ -29,7 +29,7 @@ services:
   # Keycloak Identity Provider
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
-    container_name: s3-playground-keycloak
+    container_name: image-storage-keycloak
     ports:
       - "8081:8080"
     environment:
@@ -57,7 +57,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: s3-playground-redis
+    container_name: image-storage-redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -69,26 +69,44 @@ services:
   # PostgresSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: s3-playground-postgres
+    container_name: image-storage-postgres
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=s3playground
-      - POSTGRES_USER=s3user
-      - POSTGRES_PASSWORD=s3password
+      - POSTGRES_DB=ImageStorage
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-postgres.sql:/docker-entrypoint-initdb.d/init-postgres.sql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d s3playground" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d ImageStorage" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # S3 Buckets Setup Service
+  s3-setup:
+    image: amazon/aws-cli:latest
+    container_name: image-storage-s3-setup
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-central-1
+    depends_on:
+      localstack:
+        condition: service_healthy
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: >
+      aws --endpoint-url=http://localstack:4566 s3 mb s3://dev-images-bucket &&
+      aws --endpoint-url=http://localstack:4566 s3 mb s3://dev-thumbnails-bucket &&
+      echo "S3 buckets created successfully!"
+    restart: "no"
+
   # Keycloak Setup Service
   keycloak-setup:
     image: curlimages/curl:latest
-    container_name: s3-playground-keycloak-setup
+    container_name: image-storage-keycloak-setup
     depends_on:
       keycloak:
         condition: service_healthy
@@ -98,11 +116,11 @@ services:
     restart: "no"
 
   # Spring Boot Application
-  app:
+  image-storage:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: s3-playground-app
+    container_name: image-storage
     ports:
       - "8080:8080"
     environment:
@@ -113,9 +131,9 @@ services:
       - AWS_S3_ENDPOINT=http://localstack:4566
       - IMAGE_BUCKET_NAME=dev-images-bucket
       - THUMBNAIL_BUCKET_NAME=dev-thumbnails-bucket
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/s3playground
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ImageStorage
+      - SPRING_DATASOURCE_USERNAME=isUser
+      - SPRING_DATASOURCE_PASSWORD=isPassword
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
       - SPRING_DATA_REDIS_HOST=redis
@@ -136,6 +154,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      s3-setup:
+        condition: service_completed_successfully
       keycloak-setup:
         condition: service_completed_successfully
     healthcheck:

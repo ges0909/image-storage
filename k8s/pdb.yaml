@@ -1,13 +1,13 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: s3-playground-pdb
-  namespace: s3-playground
+  name: image-storage-pdb
+  namespace: image-storage
   labels:
-    app: s3-playground
+    app: image-storage
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app: s3-playground
+      app: image-storage
       component: backend

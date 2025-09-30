@@ -23,7 +23,7 @@ public class OpenApiConfig {
                 .contact(new Contact()
                     .name("S3 Playground Team")
                     .email("team@valantic.com")
-                    .url("https://github.com/valantic/s3-playground"))
+                    .url("https://github.com/valantic/image-storage"))
                 .license(new License()
                     .name("MIT License")
                     .url("https://opensource.org/licenses/MIT")))

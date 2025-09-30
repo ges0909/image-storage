@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: s3-playground-app
-  namespace: s3-playground
+  name: image-storage-app
+  namespace: image-storage
   labels:
-    app: s3-playground
+    app: image-storage
     component: backend
 spec:
   replicas: 1
@@ -15,105 +15,105 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: s3-playground
+      app: image-storage
       component: backend
   template:
     metadata:
       labels:
-        app: s3-playground
+        app: image-storage
         component: backend
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/actuator/prometheus"
     spec:
-      # serviceAccountName: s3-playground-sa  # Disabled for local testing
+      # serviceAccountName: image-storage-sa  # Disabled for local testing
       # securityContext:  # Disabled for local testing
       #   runAsNonRoot: true
       #   runAsUser: 1001
       #   runAsGroup: 1001
       #   fsGroup: 1001
       containers:
-      - name: app
-        image: s3-playground:latest
-        imagePullPolicy: Never
-        ports:
-        - name: http
-          containerPort: 8080
-          protocol: TCP
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "dev"
-        - name: AWS_ACCESS_KEY_ID
-          value: "test"
-        - name: AWS_SECRET_ACCESS_KEY
-          value: "test"
-        - name: AWS_REGION
-          value: "us-east-1"
-        - name: IMAGE_BUCKET_NAME
-          value: "dev-images-bucket"
-        - name: THUMBNAIL_BUCKET_NAME
-          value: "dev-thumbnails-bucket"
-        - name: CLOUDFRONT_DOMAIN
-          value: "http://localhost:4566"
-        - name: MAX_FILE_SIZE
-          value: "10485760"
-        - name: KMS_KEY_ID
-          value: "alias/aws/s3"
-        - name: JAVA_OPTS
-          value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
-        - name: LOGGING_LEVEL_ROOT
-          value: "INFO"
-        - name: LOGGING_PATTERN_CONSOLE
-          value: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
-          value: "health,info,metrics"
-        - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
-          value: "always"
-        - name: AWS_CONFIG_VALIDATION_ENABLED
-          value: "false"
-        - name: SERVER_ADDRESS
-          value: "0.0.0.0"
-        - name: SERVER_PORT
-          value: "8080"
-        - name: SPRING_DATASOURCE_URL
-          value: "jdbc:postgresql://postgres:5432/s3playground"
-        - name: SPRING_DATASOURCE_USERNAME
-          value: "s3user"
-        - name: SPRING_DATASOURCE_PASSWORD
-          value: "s3password"
-        - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
-          value: "org.postgresql.Driver"
-        - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.PostgreSQLDialect"
-        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-          value: "update"
-        - name: SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION
-          value: "true"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "250m"
-        # Health checks disabled - app not responding on port 8080
-        # livenessProbe:
-        # readinessProbe:
-        # securityContext:  # Disabled for local testing
-        #   allowPrivilegeEscalation: false
-        #   readOnlyRootFilesystem: true
-        #   capabilities:
-        #     drop:
-        #     - ALL
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: app-cache
-          mountPath: /app/cache
+        - name: app
+          image: image-storage:latest
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+            - name: AWS_ACCESS_KEY_ID
+              value: "test"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "test"
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: IMAGE_BUCKET_NAME
+              value: "dev-images-bucket"
+            - name: THUMBNAIL_BUCKET_NAME
+              value: "dev-thumbnails-bucket"
+            - name: CLOUDFRONT_DOMAIN
+              value: "http://localhost:4566"
+            - name: MAX_FILE_SIZE
+              value: "10485760"
+            - name: KMS_KEY_ID
+              value: "alias/aws/s3"
+            - name: JAVA_OPTS
+              value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
+            - name: LOGGING_LEVEL_ROOT
+              value: "INFO"
+            - name: LOGGING_PATTERN_CONSOLE
+              value: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health,info,metrics"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
+              value: "always"
+            - name: AWS_CONFIG_VALIDATION_ENABLED
+              value: "false"
+            - name: SERVER_ADDRESS
+              value: "0.0.0.0"
+            - name: SERVER_PORT
+              value: "8080"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/s3playground"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "s3user"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "s3password"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: "org.postgresql.Driver"
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: "org.hibernate.dialect.PostgreSQLDialect"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION
+              value: "true"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          # Health checks disabled - app not responding on port 8080
+          # livenessProbe:
+          # readinessProbe:
+          # securityContext:  # Disabled for local testing
+          #   allowPrivilegeEscalation: false
+          #   readOnlyRootFilesystem: true
+          #   capabilities:
+          #     drop:
+          #     - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: app-cache
+              mountPath: /app/cache
       volumes:
-      - name: tmp
-        emptyDir: {}
-      - name: app-cache
-        emptyDir: {}
+        - name: tmp
+          emptyDir: { }
+        - name: app-cache
+          emptyDir: { }
       terminationGracePeriodSeconds: 30

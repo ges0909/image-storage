@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: s3-playground-ingress
-  namespace: s3-playground
+  name: image-storage-ingress
+  namespace: image-storage
   labels:
-    app: s3-playground
+    app: image-storage
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -16,17 +16,17 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - s3-playground.example.com
-    secretName: s3-playground-tls
+    - hosts:
+        - image-storage.example.com
+      secretName: image-storage-tls
   rules:
-  - host: s3-playground.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: s3-playground-service
-            port:
-              number: 80
+    - host: image-storage.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: image-storage-service
+                port:
+                  number: 80

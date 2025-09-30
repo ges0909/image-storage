@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing
-public class ImageApplication {
+public class ImageStorageApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ImageApplication.class, args);
+        SpringApplication.run(ImageStorageApplication.class, args);
     }
 }

@@ -1,19 +1,16 @@
+-- Create application user
+CREATE USER "isUser" WITH PASSWORD 'isPassword';
+GRANT ALL PRIVILEGES ON DATABASE "ImageStorage" TO "isUser";
+
 -- Create Keycloak database and user
 CREATE DATABASE keycloak;
-DO
-$do$
-BEGIN
-   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'keycloak') THEN
-      CREATE USER keycloak WITH PASSWORD 'keycloak';
-   END IF;
-END
-$do$;
+CREATE USER keycloak WITH PASSWORD 'keycloak';
 GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
 
 -- Fix schema ownership for both databases
-\c s3playground;
-ALTER SCHEMA public OWNER TO postgres;
-GRANT ALL ON SCHEMA public TO postgres;
+\c "ImageStorage";
+ALTER SCHEMA public OWNER TO "isUser";
+GRANT ALL ON SCHEMA public TO "isUser";
 
 \c keycloak;
 ALTER SCHEMA public OWNER TO keycloak;

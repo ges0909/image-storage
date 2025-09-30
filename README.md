@@ -5,27 +5,31 @@
 ## 🚀 Technologies
 
 ### Core Stack
+
 - **Java 21** (LTS)
 - **Spring Boot 3.5.6**
 - **AWS SDK 2.34.3** with **S3 Transfer Manager**
-- **Spring Data JPA** with **PostgreSQL 16**
+- **Spring Data JPA** with **PostgresSQL 16**
 - **Flyway** for database migrations
 - **Redis 7** for caching
 - **Thumbnailator 0.4.20** for image processing
 
 ### Security & Authentication
+
 - **Spring Security OAuth2** with **Keycloak** integration
 - **JWT Resource Server** for API authentication
 - **Role-based access control** (RBAC)
 - **OpenID Connect** (OIDC) support
 
 ### Performance & Monitoring
+
 - **Micrometer** for metrics
 - **Spring Boot Actuator** for health checks
 - **Async Processing** with custom thread pools
 - **Database indexing** for fast search
 
 ### Testing & Documentation
+
 - **SpringDoc OpenAPI 2.8.15**
 - **JUnit 5 + Mockito**
 - **Testcontainers + LocalStack**
@@ -88,8 +92,9 @@ mvn clean verify
 ### Local Development Options
 
 #### Option 1: Full Docker Environment with Keycloak (Recommended)
+
 ```bash
-# Start all services (PostgreSQL, Redis, LocalStack, Keycloak, App)
+# Start all services (PostgresSQL, Redis, LocalStack, Keycloak, App)
 docker-compose up --build
 
 # Setup Keycloak realm and client
@@ -103,6 +108,7 @@ docker-compose down -v
 ```
 
 #### Option 2: Hybrid Development (App local, Services in Docker)
+
 ```bash
 # Without authentication (dev profile only)
 docker-compose up postgres redis localstack -d
@@ -115,6 +121,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev,keycloak
 ```
 
 #### Option 3: Docker Only
+
 ```bash
 # Build image
 ./build-docker.sh
@@ -124,7 +131,7 @@ docker run -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=dev \
   -e AWS_ACCESS_KEY_ID=test \
   -e AWS_SECRET_ACCESS_KEY=test \
-  s3-playground:latest
+  image-storage:latest
 ```
 
 **Available after startup:**
@@ -161,50 +168,54 @@ mvn flyway:validate
 
 ### Spring Profiles
 
-| Profile | Database | Authentication | Use Case |
-|---------|----------|----------------|----------|
-| `dev` | PostgreSQL | None | Basic local development |
-| `dev,keycloak` | PostgreSQL | Keycloak OAuth2 | Full local development with auth |
-| `k8s` | PostgreSQL | Keycloak OAuth2 | Kubernetes deployment |
-| `test` | H2 in-memory | None | Unit/Integration tests |
+| Profile        | Database     | Authentication  | Use Case                         |
+|----------------|--------------|-----------------|----------------------------------|
+| `dev`          | PostgresSQL  | None            | Basic local development          |
+| `dev,keycloak` | PostgresSQL  | Keycloak OAuth2 | Full local development with auth |
+| `k8s`          | PostgresSQL  | Keycloak OAuth2 | Kubernetes deployment            |
+| `test`         | H2 in-memory | None            | Unit/Integration tests           |
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SPRING_PROFILES_ACTIVE` | Active Spring profiles | `k8s` |
-| `IMAGE_BUCKET_NAME` | S3 bucket for images | `images-bucket-dev` |
-| `THUMBNAIL_BUCKET_NAME` | S3 bucket for thumbnails | `thumbnails-bucket-dev` |
-| `AWS_REGION` | AWS region | `eu-central-1` |
-| `KMS_KEY_ID` | KMS key for encryption | `alias/aws/s3` |
-| `MAX_FILE_SIZE` | Max upload size (bytes) | `10485760` |
+| Variable                 | Description              | Default                 |
+|--------------------------|--------------------------|-------------------------|
+| `SPRING_PROFILES_ACTIVE` | Active Spring profiles   | `k8s`                   |
+| `IMAGE_BUCKET_NAME`      | S3 bucket for images     | `images-bucket-dev`     |
+| `THUMBNAIL_BUCKET_NAME`  | S3 bucket for thumbnails | `thumbnails-bucket-dev` |
+| `AWS_REGION`             | AWS region               | `eu-central-1`          |
+| `KMS_KEY_ID`             | KMS key for encryption   | `alias/aws/s3`          |
+| `MAX_FILE_SIZE`          | Max upload size (bytes)  | `10485760`              |
 
 ### Keycloak Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `KEYCLOAK_CLIENT_ID` | OAuth2 client ID | `image-storage-app` |
-| `KEYCLOAK_CLIENT_SECRET` | OAuth2 client secret | `your-client-secret` |
-| `KEYCLOAK_ISSUER_URI` | Keycloak realm issuer URI | `http://localhost:8081/realms/image-storage` |
-| `KEYCLOAK_AUTH_URI` | Authorization endpoint | Auto-configured |
-| `KEYCLOAK_TOKEN_URI` | Token endpoint | Auto-configured |
-| `KEYCLOAK_USERINFO_URI` | UserInfo endpoint | Auto-configured |
+| Variable                 | Description               | Default                                      |
+|--------------------------|---------------------------|----------------------------------------------|
+| `KEYCLOAK_CLIENT_ID`     | OAuth2 client ID          | `image-storage-app`                          |
+| `KEYCLOAK_CLIENT_SECRET` | OAuth2 client secret      | `your-client-secret`                         |
+| `KEYCLOAK_ISSUER_URI`    | Keycloak realm issuer URI | `http://localhost:8081/realms/image-storage` |
+| `KEYCLOAK_AUTH_URI`      | Authorization endpoint    | Auto-configured                              |
+| `KEYCLOAK_TOKEN_URI`     | Token endpoint            | Auto-configured                              |
+| `KEYCLOAK_USERINFO_URI`  | UserInfo endpoint         | Auto-configured                              |
 
 ## 🖼️ API Endpoints
 
 ### **Authentication Required**
+
 All API endpoints require OAuth2 authentication via Keycloak. Use one of:
+
 - **Browser Login**: http://localhost:8080/oauth2/authorization/keycloak
 - **Bearer Token**: `Authorization: Bearer <JWT_TOKEN>`
 - **API Testing**: Use Swagger UI after OAuth2 login
 
 ### **Optimized Endpoints**
+
 - `POST /api/images` - **Async upload** with immediate response (requires `USER` role)
 - `GET /api/images/search` - **Database-powered** search (90% faster)
 - `GET /api/images/{id}` - **Cached** metadata retrieval
 - `GET /api/images/stats` - **Cached** statistics
 
 ### **Standard Endpoints**
+
 - `PUT /api/images/{id}` - Update metadata
 - `DELETE /api/images/{id}` - Delete image + thumbnails (requires `ADMIN` role or ownership)
 - `GET /api/images/{id}/download` - Generate signed URL
@@ -212,9 +223,11 @@ All API endpoints require OAuth2 authentication via Keycloak. Use one of:
 - `POST /api/images/{id}/tags` - Add/remove tags
 
 ### **Admin Endpoints**
+
 - `DELETE /api/batch/images` - Batch delete images (requires `ADMIN` role)
 
 ### **OAuth2 Endpoints**
+
 - `GET /api/oauth2/user` - Get authenticated user info
 - `GET /api/oauth2/jwt` - Get JWT token claims
 - `GET /api/oauth2/login` - OAuth2 provider links
@@ -222,18 +235,21 @@ All API endpoints require OAuth2 authentication via Keycloak. Use one of:
 ## 📊 Performance Features
 
 ### **Large File Optimization (10-100MB)**
+
 - **S3 Transfer Manager** - Automatic multipart uploads
 - **Async Processing** - Immediate response, background thumbnail generation
 - **Streaming** - Memory-efficient image processing
 - **WebP Compression** - 30% smaller thumbnails
 
 ### **Database-Backed Search**
+
 - **JPA Entities** - Fast metadata queries with indexing
 - **Redis Caching** - 1-hour TTL for frequently accessed data
 - **Paginated Results** - Efficient large dataset handling
 - **Complex Filtering** - Title, tags, size, date range
 
 ### **Monitoring & Metrics**
+
 - **Micrometer Integration** - Upload duration, success rates
 - **Custom Thread Pools** - Optimized for I/O operations
 - **Health Checks** - S3 connectivity, database status
@@ -242,20 +258,23 @@ All API endpoints require OAuth2 authentication via Keycloak. Use one of:
 ## 📊 Performance Benchmarks
 
 ### **Upload Performance**
-| File Size | Standard Upload | Optimized Upload | Improvement |
-|-----------|----------------|------------------|-------------|
-| 10MB      | 3.2s          | 1.1s            | **65% faster** |
-| 50MB      | 18.5s         | 4.8s            | **74% faster** |
-| 100MB     | 42.1s         | 9.2s            | **78% faster** |
+
+| File Size | Standard Upload | Optimized Upload | Improvement    |
+|-----------|-----------------|------------------|----------------|
+| 10MB      | 3.2s            | 1.1s             | **65% faster** |
+| 50MB      | 18.5s           | 4.8s             | **74% faster** |
+| 100MB     | 42.1s           | 9.2s             | **78% faster** |
 
 ### **Search Performance**
-| Dataset Size | S3 ListObjects | Database Search | Improvement |
-|--------------|----------------|-----------------|-------------|
-| 1,000 images | 2.1s          | 0.12s          | **94% faster** |
-| 10,000 images| 8.7s          | 0.18s          | **98% faster** |
-| 100,000 images| 45.2s        | 0.25s          | **99% faster** |
+
+| Dataset Size   | S3 ListObjects | Database Search | Improvement    |
+|----------------|----------------|-----------------|----------------|
+| 1,000 images   | 2.1s           | 0.12s           | **94% faster** |
+| 10,000 images  | 8.7s           | 0.18s           | **98% faster** |
+| 100,000 images | 45.2s          | 0.25s           | **99% faster** |
 
 ### **Memory Usage**
+
 - **Streaming Processing** - Constant 256MB regardless of file size
 - **Async Thumbnails** - Non-blocking upload response
 - **Redis Caching** - 80% reduction in database queries
@@ -309,15 +328,16 @@ cd k8s && ./deploy.sh
 kubectl apply -f k8s/
 
 # Check deployment status
-kubectl get all -n s3-playground
+kubectl get all -n image-storage
 
 # View application logs
-kubectl logs -f deployment/s3-playground-app -n s3-playground
+kubectl logs -f deployment/image-storage-app -n image-storage
 ```
 
 ### Production Features
 
 #### 🔒 Security
+
 - **Non-root containers** (User 1001)
 - **ReadOnlyRootFilesystem** for immutable containers
 - **Network Policies** for traffic isolation
@@ -325,6 +345,7 @@ kubectl logs -f deployment/s3-playground-app -n s3-playground
 - **AWS IAM integration** via ServiceAccount annotations
 
 #### 🏥 Health & Monitoring
+
 - **Liveness probes** for automatic restart
 - **Readiness probes** for traffic routing
 - **Custom S3 health checks**
@@ -332,6 +353,7 @@ kubectl logs -f deployment/s3-playground-app -n s3-playground
 - **Structured logging** for observability
 
 #### 📊 Scalability & Reliability
+
 - **Horizontal Pod Autoscaler** (3-10 replicas)
 - **Rolling updates** with zero downtime
 - **PodDisruptionBudget** for high availability
@@ -362,12 +384,12 @@ Use **Testcontainers** with **LocalStack** for real S3-API tests without AWS cos
 
 ### Security Best Practices
 
-```java
+```text
 // Secure bucket with all protection measures
 securityService.createBucketWithACL("secure-bucket");
 securityService.blockPublicAccess("secure-bucket");
 securityService.enableVersioning("secure-bucket");
-securityService.uploadFileWithEncryption("secure-bucket", "secret.txt", data);
+securityService.uploadFileWithEncryption("secure-bucket","secret.txt",data);
 ```
 
 ### Example Bucket Policy
@@ -385,6 +407,7 @@ See `bucket-policy-example.json` for complete policy examples.
 The application uses **Keycloak** as OAuth2/OIDC provider for secure authentication and authorization.
 
 #### **Quick Setup**
+
 ```bash
 # Start all services including Keycloak
 docker-compose up -d
@@ -394,6 +417,7 @@ docker-compose up -d
 ```
 
 #### **Manual Keycloak Configuration**
+
 1. **Admin Console**: http://localhost:8081 (`admin/admin`)
 2. **Create Realm**: `image-storage`
 3. **Create Client**: `image-storage-app`
@@ -401,6 +425,7 @@ docker-compose up -d
 5. **Create Test User**: `testuser/password`
 
 #### **Authentication Flow**
+
 ```bash
 # 1. Browser Login
 open http://localhost:8080/oauth2/authorization/keycloak
@@ -419,13 +444,14 @@ curl -H "Authorization: Bearer <TOKEN>" \
 
 #### **Role-Based Access Control**
 
-| Role | Permissions |
-|------|-------------|
-| **USER** | View images, search, get metadata |
-| **UPLOADER** | Upload images, create thumbnails |
-| **ADMIN** | All permissions, batch operations, delete any image |
+| Role         | Permissions                                         |
+|--------------|-----------------------------------------------------|
+| **USER**     | View images, search, get metadata                   |
+| **UPLOADER** | Upload images, create thumbnails                    |
+| **ADMIN**    | All permissions, batch operations, delete any image |
 
 #### **Security Features**
+
 - ✅ **OAuth2/OIDC** standard compliance
 - ✅ **JWT tokens** with role-based claims
 - ✅ **Stateless authentication** for scalability
@@ -436,17 +462,20 @@ curl -H "Authorization: Bearer <TOKEN>" \
 ### **Development vs Production**
 
 #### **Development (Docker Compose)**
+
 - **Keycloak**: http://localhost:8081
 - **Application**: http://localhost:8080
 - **Auto-setup**: `init-keycloak.sh`
 - **Test User**: `testuser/password`
 
 #### **Production (Kubernetes)**
+
 - **External Keycloak** cluster recommended
 - **HTTPS-only** communication
 - **Production-grade** client secrets
 - **RBAC integration** with K8s ServiceAccounts
 
 For detailed setup instructions, see:
+
 - `README-keycloak-docker.md` - Docker development setup
 - `keycloak-setup.md` - Manual configuration guide

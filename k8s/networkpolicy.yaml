@@ -1,34 +1,34 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: s3-playground-netpol
-  namespace: s3-playground
+  name: image-storage-netpol
+  namespace: image-storage
   labels:
-    app: s3-playground
+    app: image-storage
 spec:
   podSelector:
     matchLabels:
-      app: s3-playground
+      app: image-storage
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ingress-nginx
-    - namespaceSelector:
-        matchLabels:
-          name: monitoring
-    ports:
-    - protocol: TCP
-      port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
   egress:
-  - to: []
-    ports:
-    - protocol: TCP
-      port: 443  # HTTPS to AWS
-    - protocol: TCP
-      port: 53   # DNS
-    - protocol: UDP
-      port: 53   # DNS
+    - to: [ ]
+      ports:
+        - protocol: TCP
+          port: 443  # HTTPS to AWS
+        - protocol: TCP
+          port: 53   # DNS
+        - protocol: UDP
+          port: 53   # DNS

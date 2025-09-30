@@ -3,7 +3,7 @@
 
 set -e
 
-APP_NAME="s3-playground"
+APP_NAME="image-storage"
 VERSION=${1:-latest}
 REGISTRY=${REGISTRY:-""}
 

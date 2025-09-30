@@ -3,10 +3,10 @@
 
 set -e
 
-NAMESPACE="s3-playground"
+NAMESPACE="image-storage"
 ENVIRONMENT=${1:-production}
 
-echo "🚀 Deploying S3 Playground to Kubernetes (${ENVIRONMENT})"
+echo "🚀 Deploying Image Storage to Kubernetes (${ENVIRONMENT})"
 
 # Apply manifests in correct order
 echo "📦 Creating namespace..."
@@ -46,8 +46,8 @@ echo "⏳ Waiting for PostgreSQL to be ready..."
 kubectl rollout status deployment/postgres -n ${NAMESPACE} --timeout=120s
 
 echo "⏳ Waiting for deployment to be ready..."
-kubectl rollout status deployment/s3-playground-app -n ${NAMESPACE} --timeout=300s
+kubectl rollout status deployment/image-storage-app -n ${NAMESPACE} --timeout=300s
 
 echo "✅ Deployment completed successfully!"
 echo "🔍 Check status with: kubectl get all -n ${NAMESPACE}"
-echo "📊 View logs with: kubectl logs -f deployment/s3-playground-app -n ${NAMESPACE}"
+echo "📊 View logs with: kubectl logs -f deployment/image-storage-app -n ${NAMESPACE}"

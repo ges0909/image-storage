@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: s3-playground
+  name: image-storage
   labels:
-    app: s3-playground
+    app: image-storage
     environment: production

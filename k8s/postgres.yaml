@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: s3-playground
+  namespace: image-storage
 spec:
   replicas: 1
   selector:
@@ -14,52 +14,52 @@ spec:
         app: postgres
     spec:
       containers:
-      - name: postgres
-        image: postgres:16-alpine
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_DB
-          value: "s3playground"
-        - name: POSTGRES_USER
-          value: "s3user"
-        - name: POSTGRES_PASSWORD
-          value: "s3password"
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        livenessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -U
-            - s3user
-            - -d
-            - s3playground
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -U
-            - s3user
-            - -d
-            - s3playground
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "s3playground"
+            - name: POSTGRES_USER
+              value: "s3user"
+            - name: POSTGRES_PASSWORD
+              value: "s3password"
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - s3user
+                - -d
+                - s3playground
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - s3user
+                - -d
+                - s3playground
+            initialDelaySeconds: 5
+            periodSeconds: 5
       volumes:
-      - name: postgres-storage
-        emptyDir: {}
+        - name: postgres-storage
+          emptyDir: { }
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: s3-playground
+  namespace: image-storage
 spec:
   selector:
     app: postgres
   ports:
-  - port: 5432
-    targetPort: 5432
+    - port: 5432
+      targetPort: 5432

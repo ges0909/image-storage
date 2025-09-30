@@ -1,7 +1,7 @@
 spring:
   main:
     allow-bean-definition-overriding: true
-  
+
   profiles:
     active: dev
 
@@ -12,9 +12,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:postgresql://localhost:5432/s3playground
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/ImageStorage
+    username: isUser
+    password: isPassword
   jpa:
     hibernate:
       ddl-auto: validate
@@ -48,7 +48,7 @@ image:
   max-file-size: ${MAX_FILE_SIZE:10485760}
   region: ${AWS_REGION:eu-central-1}
   url-expiration-minutes: ${URL_EXPIRATION_MINUTES:15}
-  thumbnail-sizes: [150, 300, 600]
+  thumbnail-sizes: [ 150, 300, 600 ]
   supported-types:
     - image/jpeg
     - image/png

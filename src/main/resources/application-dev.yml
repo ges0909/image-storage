@@ -1,9 +1,9 @@
 spring:
   # PostgresSQL configuration for dev profile
   datasource:
-    url: jdbc:postgresql://localhost:5432/s3playground
-    username: s3user
-    password: s3password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ImageStorage}
+    username: ${SPRING_DATASOURCE_USERNAME:isUser}
+    password: ${SPRING_DATASOURCE_PASSWORD:isPassword}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -33,7 +33,7 @@ image:
   max-file-size: ${MAX_FILE_SIZE:10485760}
   region: ${AWS_REGION:eu-central-1}
   url-expiration-minutes: ${URL_EXPIRATION_MINUTES:15}
-  thumbnail-sizes: [150, 300, 600]
+  thumbnail-sizes: [ 150, 300, 600 ]
   supported-types:
     - image/jpeg
     - image/png

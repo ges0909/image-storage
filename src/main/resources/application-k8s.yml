@@ -1,9 +1,9 @@
 # ☸️ Kubernetes-Ready Configuration
 app:
   image:
-    bucket-name: ${S3_BUCKET_NAME:s3-playground-images}
-    thumbnail-bucket-name: ${S3_THUMBNAIL_BUCKET:s3-playground-thumbnails}
-    kms-key-id: ${KMS_KEY_ID:alias/s3-playground-key}
+    bucket-name: ${S3_BUCKET_NAME:image-storage-images}
+    thumbnail-bucket-name: ${S3_THUMBNAIL_BUCKET:image-storage-thumbnails}
+    kms-key-id: ${KMS_KEY_ID:alias/image-storage-key}
     cloud-front-domain: ${CLOUDFRONT_DOMAIN:}
     max-file-size-bytes: ${MAX_FILE_SIZE_BYTES:10485760}
     region: ${AWS_REGION:eu-central-1}
