@@ -41,3 +41,6 @@ redis-data/
 # Cache directories
 .cache/
 cache/
+
+
+docs/requirements/
