@@ -20,6 +20,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack-data:/var/lib/localstack"
+      - "./init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:4566/health" ]
       interval: 30s
@@ -85,24 +86,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # S3 Buckets Setup Service
-  s3-setup:
-    image: amazon/aws-cli:latest
-    container_name: image-storage-s3-setup
-    environment:
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_DEFAULT_REGION=eu-central-1
-    depends_on:
-      localstack:
-        condition: service_healthy
-    entrypoint: [ "/bin/sh", "-c" ]
-    command: >
-      aws --endpoint-url=http://localstack:4566 s3 mb s3://dev-images-bucket &&
-      aws --endpoint-url=http://localstack:4566 s3 mb s3://dev-thumbnails-bucket &&
-      echo "S3 buckets created successfully!"
-    restart: "no"
-
   # Keycloak Setup Service
   keycloak-setup:
     image: curlimages/curl:latest
@@ -154,8 +137,6 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-      s3-setup:
-        condition: service_completed_successfully
       keycloak-setup:
         condition: service_completed_successfully
     healthcheck:

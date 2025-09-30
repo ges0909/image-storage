@@ -31,6 +31,7 @@
     <mockito.version>5.20.0</mockito.version>
     <maven-wrapper.version>3.2.0</maven-wrapper.version>
     <maven.version>3.9.6</maven.version>
+    <postgresql.version>42.7.8</postgresql.version>
   </properties>
 
   <dependencyManagement>
@@ -253,9 +254,9 @@
         <groupId>org.flywaydb</groupId>
         <artifactId>flyway-maven-plugin</artifactId>
         <configuration>
-          <url>jdbc:postgresql://localhost:5432/s3playground</url>
-          <user>s3user</user>
-          <password>s3password</password>
+          <url>jdbc:postgresql://localhost:5432/ImageStorage</url>
+          <user>isUser</user>
+          <password>isPassword</password>
           <locations>
             <location>classpath:db/migration</location>
           </locations>

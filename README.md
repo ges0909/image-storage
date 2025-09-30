@@ -180,8 +180,8 @@ mvn flyway:validate
 | Variable                 | Description              | Default                 |
 |--------------------------|--------------------------|-------------------------|
 | `SPRING_PROFILES_ACTIVE` | Active Spring profiles   | `k8s`                   |
-| `IMAGE_BUCKET_NAME`      | S3 bucket for images     | `images-bucket-dev`     |
-| `THUMBNAIL_BUCKET_NAME`  | S3 bucket for thumbnails | `thumbnails-bucket-dev` |
+| `IMAGE_BUCKET_NAME`      | S3 bucket for images     | `dev-images-bucket`     |
+| `THUMBNAIL_BUCKET_NAME`  | S3 bucket for thumbnails | `dev-thumbnails-bucket` |
 | `AWS_REGION`             | AWS region               | `eu-central-1`          |
 | `KMS_KEY_ID`             | KMS key for encryption   | `alias/aws/s3`          |
 | `MAX_FILE_SIZE`          | Max upload size (bytes)  | `10485760`              |

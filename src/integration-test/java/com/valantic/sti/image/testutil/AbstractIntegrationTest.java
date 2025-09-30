@@ -64,7 +64,7 @@ public abstract class AbstractIntegrationTest {
             // Create buckets that the application expects
             s3Client.createBucket(CreateBucketRequest.builder().bucket(TEST_BUCKET).build());
             s3Client.createBucket(CreateBucketRequest.builder().bucket(TEST_THUMBNAILS_BUCKET).build());
-            s3Client.createBucket(CreateBucketRequest.builder().bucket("images-bucket-dev").build());
+            s3Client.createBucket(CreateBucketRequest.builder().bucket("dev-images-bucket").build());
         }
     }
 
