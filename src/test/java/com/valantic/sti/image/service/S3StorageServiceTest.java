@@ -1,7 +1,9 @@
 package com.valantic.sti.image.service;
 
 import com.valantic.sti.image.ImageProperties;
+import com.valantic.sti.image.entity.ImageMetadata;
 import com.valantic.sti.image.exception.ImageProcessingException;
+import com.valantic.sti.image.repository.ImageMetadataRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -10,13 +12,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,6 +38,12 @@ class S3StorageServiceTest {
     @Mock
     private S3Client s3Client;
     @Mock
+    private S3AsyncClient s3AsyncClient;
+    @Mock
+    private S3TransferManager transferManager;
+    @Mock
+    private ImageMetadataRepository metadataRepository;
+    @Mock
     private PutObjectResponse putObjectResponse;
 
     private S3StorageService s3StorageService;
@@ -47,7 +56,7 @@ class S3StorageServiceTest {
             Set.of("image/jpeg", "image/png"), 1000, "images"
         );
 
-        s3StorageService = new S3StorageService(s3Client, imageProperties);
+        s3StorageService = new S3StorageService(s3Client, s3AsyncClient, transferManager, metadataRepository, imageProperties);
     }
 
     @Nested
@@ -59,7 +68,10 @@ class S3StorageServiceTest {
         void uploadImage_ShouldUploadSuccessfully() {
             // Given
             byte[] imageData = "test-image-data".getBytes();
-            Map<String, String> metadata = Map.of("title", "Test Image");
+            ImageMetadata metadata = new ImageMetadata(
+                "test-id", "Test Image", "Test Description", Set.of("tag1"),
+                "image/jpeg", 1024L, 800, 600, "test-key", "user"
+            );
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(putObjectResponse);
 
@@ -79,7 +91,10 @@ class S3StorageServiceTest {
                 .thenThrow(S3Exception.builder().message("S3 error").build());
 
             // When & Then
-            assertThatThrownBy(() -> s3StorageService.uploadImage("key", imageData, "image/jpeg", Map.of()))
+            ImageMetadata metadata = new ImageMetadata(
+                "test-id", "Test", "Desc", Set.of(), "image/jpeg", 1024L, 800, 600, "key", "user"
+            );
+            assertThatThrownBy(() -> s3StorageService.uploadImage("key", imageData, "image/jpeg", metadata))
                 .isInstanceOf(ImageProcessingException.class)
                 .hasMessage("S3 upload failed");
         }
@@ -93,7 +108,10 @@ class S3StorageServiceTest {
                 .thenReturn(putObjectResponse);
 
             // When
-            s3StorageService.uploadImage("test-key", imageData, "image/jpeg", Map.of("title", "Test"));
+            ImageMetadata metadata = new ImageMetadata(
+                "test-id", "Test", "Desc", Set.of("tag"), "image/jpeg", 1024L, 800, 600, "test-key", "user"
+            );
+            s3StorageService.uploadImage("test-key", imageData, "image/jpeg", metadata);
 
             // Then
             verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
@@ -138,7 +156,10 @@ class S3StorageServiceTest {
         void uploadImage_ShouldHandleEmptyS3Key() {
             // When - Service doesn't validate, passes to AWS SDK
             // Then - Should not throw at service level (AWS SDK will handle)
-            s3StorageService.uploadImage("", new byte[1], "image/jpeg", Map.of());
+            ImageMetadata metadata = new ImageMetadata(
+                "test-id", "Test", "Desc", Set.of(), "image/jpeg", 1L, 1, 1, "", "user"
+            );
+            s3StorageService.uploadImage("", new byte[1], "image/jpeg", metadata);
             verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         }
 
@@ -146,7 +167,10 @@ class S3StorageServiceTest {
         @DisplayName("Should handle null image data with NullPointerException")
         void uploadImage_ShouldHandleNullImageData() {
             // When & Then - RequestBody.fromBytes(null) throws NPE
-            assertThatThrownBy(() -> s3StorageService.uploadImage("key", null, "image/jpeg", Map.of()))
+            ImageMetadata metadata = new ImageMetadata(
+                "test-id", "Test", "Desc", Set.of(), "image/jpeg", 0L, 1, 1, "key", "user"
+            );
+            assertThatThrownBy(() -> s3StorageService.uploadImage("key", null, "image/jpeg", metadata))
                 .isInstanceOf(NullPointerException.class);
         }
 
@@ -155,7 +179,10 @@ class S3StorageServiceTest {
         void uploadImage_ShouldHandleEmptyContentType() {
             // When - Service doesn't validate, passes to AWS SDK
             // Then - Should not throw at service level
-            s3StorageService.uploadImage("key", new byte[1], "", Map.of());
+            ImageMetadata metadata = new ImageMetadata(
+                "test-id", "Test", "Desc", Set.of(), "", 1L, 1, 1, "key", "user"
+            );
+            s3StorageService.uploadImage("key", new byte[1], "", metadata);
             verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         }
     }

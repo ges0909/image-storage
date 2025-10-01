@@ -24,21 +24,21 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Zentrale Orchestrierungsschicht für alle bildverarbeitungsbezogenen Operationen.
+ * Central orchestration layer for all machine vision-related operations.
  * <p>
- * Diese Service-Klasse koordiniert die Zusammenarbeit zwischen spezialisierten Services:
+ * This class of service coordinates the cooperation between specialized services:
  * - S3StorageService: AWS S3 Upload/Download
- * - ImageProcessingService: Thumbnail-Generierung und Bildverarbeitung
- * - ImageMetadataService: Datenbankoperationen für Metadaten
- * - ImageUrlService: Signierte URL-Generierung
- * - ImageValidationService: Input-Validierung und Sanitization
- * - AsyncImageService: Asynchrone Hintergrundverarbeitung
+ * - ImageProcessingService: Thumbnail generation and image processing
+ * - ImageMetadataService: Database operations for metadata
+ * - ImageUrlService: Signed URL generation
+ * - ImageValidationService: Input Validation and Sanitization
+ * - AsyncImageService: Asynchronous background processing
  * <p>
- * Performance-Features:
- * - Async Upload für große Dateien (10-100 MB)
- * - Micrometer-Metriken für Monitoring
- * - Transaktionale Sicherheit
- * - Caching über ImageMetadataService
+ * Performance Features:
+ * - Async upload for large files (10-100 MB)
+ * - Micrometer metrics for monitoring
+ * - Transactional Security
+ * - Caching via ImageMetadataService
  */
 @Service
 public class ImageService {
@@ -64,8 +64,7 @@ public class ImageService {
     }
 
     /**
-     * 📤 Synchroner Bild-Upload mit vollständiger Verarbeitung.
-     * ⚠️ Für große Dateien (>10 MB) uploadImageAsync() verwenden!
+     * Synchronous image upload with full processing. For large files (>10 MB) use uploadImageAsync()!
      */
     @Timed("image.upload.sync")
     @Counted("image.upload.requests")
@@ -74,7 +73,7 @@ public class ImageService {
     }
 
     /**
-     * ⚡ Asynchroner Bild-Upload für optimale Performance bei großen Dateien.
+     * Asynchronous image upload for optimal performance with large files.
      */
     @Timed("image.upload.async")
     @Counted("image.upload.async.requests")
@@ -83,7 +82,7 @@ public class ImageService {
     }
 
     /**
-     * 📊 Metadaten-Abruf mit Redis-Caching (1h TTL).
+     * Metadata retrieval with Redis caching (1h TTL).
      */
     public ImageResponse getImageMetadata(String imageId) {
         ImageMetadata metadata = imageMetadataService.findById(imageId);
@@ -91,7 +90,7 @@ public class ImageService {
     }
 
     /**
-     * ✏️ Metadaten-Update mit partieller Aktualisierung.
+     * Metadata update with partial update.
      */
     @Transactional
     @Timed("image.update")
@@ -110,27 +109,28 @@ public class ImageService {
     }
 
     /**
-     * 🔍 Datenbankbasierte Suche, deutlich schneller als S3 ListObjects.
+     * Database-based search, significantly faster than S3 ListObjects.
      */
     public SearchResponse searchImages(SearchRequest request) {
         return imageMetadataService.searchImages(request);
     }
 
     /**
-     * 🔗 Generierung signierter URLs für sicheren, zeitlich begrenzten Zugriff.
+     * Generate signed URLs for secure, time-limited access.
      */
     @Timed("image.url.generate")
     public String generateSignedUrl(String imageId, ImageSize size, Duration expiration) {
         ImageMetadata metadata = imageMetadataService.findById(imageId);
-        String key = size == ImageSize.ORIGINAL ? metadata.getS3Key() :
-            "thumbnails/" + imageId + "/" + getSizePixels(size) + ".webp";
+        String key = size == ImageSize.ORIGINAL
+            ? metadata.getS3Key()
+            : "thumbnails/" + imageId + "/" + getSizePixels(size) + ".webp";
         String bucketName = size == ImageSize.ORIGINAL ?
             imageProperties.bucketName() : imageProperties.thumbnailBucketName();
         return imageUrlService.generatePresignedUrl(bucketName, key, (int) expiration.toMinutes());
     }
 
     /**
-     * 🖼️ Thumbnail-URL mit Standard-Gültigkeit (15min).
+     * Thumbnail URL with default validity (15min).
      */
     public String getThumbnailUrl(String imageId, ImageSize size) {
         if (size == ImageSize.ORIGINAL) {
@@ -141,7 +141,7 @@ public class ImageService {
     }
 
     /**
-     * 📋 Paginierte Bildliste, sortiert nach Erstellungsdatum.
+     * Paginated image list, sorted by creation date.
      */
     @Timed("image.list")
     public List<ImageResponse> listImages(int page, int size) {
@@ -149,29 +149,38 @@ public class ImageService {
         return searchImages(request).images();
     }
 
+    /**
+     * Retrieves all S3 object versions for an image.
+     */
     @Timed("image.versions.get")
     public List<ImageVersion> getImageVersions(String imageId) {
         ImageMetadata metadata = imageMetadataService.findById(imageId);
         return s3StorageService.getObjectVersions(metadata.getS3Key());
     }
 
+    /**
+     * Restores a specific S3 object version as the current version.
+     */
     @Transactional
     @Timed("image.version.restore")
     @Counted("image.version.restore.requests")
     public ImageResponse restoreVersion(String imageId, String versionId) {
         ImageMetadata metadata = imageMetadataService.findById(imageId);
-        
+
         // Restore S3 object version by copying the specific version to current
         s3StorageService.restoreVersion(metadata.getS3Key(), versionId);
-        
+
         // Update metadata with restoration timestamp
         metadata.setUpdatedAt(java.time.LocalDateTime.now());
         ImageMetadata updated = imageMetadataService.save(metadata);
-        
+
         log.info("Version {} restored for image: {}", versionId, imageId);
         return buildImageResponse(updated);
     }
 
+    /**
+     * Adds new tags to an existing image.
+     */
     @Transactional
     @Timed("image.tags.add")
     @Counted("image.tags.add.requests")
@@ -184,6 +193,9 @@ public class ImageService {
         log.info("Added {} tags to image: {}", tags.size(), imageId);
     }
 
+    /**
+     * Removes specific tags from an image.
+     */
     @Transactional
     @Timed("image.tags.remove")
     @Counted("image.tags.remove.requests")
@@ -196,6 +208,9 @@ public class ImageService {
         log.info("Removed {} tags from image: {}", tags.size(), imageId);
     }
 
+    /**
+     * Retrieves global image storage statistics.
+     */
     @Timed("image.stats.get")
     public ImageStats getImageStats() {
         // TODO: Implement proper statistics calculation from database
@@ -204,6 +219,9 @@ public class ImageService {
         );
     }
 
+    /**
+     * Retrieves analytics data for a specific image.
+     */
     @Timed("image.analytics.get")
     public ImageAnalytics getImageAnalytics(String imageId) {
         imageMetadataService.findById(imageId);
@@ -214,7 +232,7 @@ public class ImageService {
     }
 
     /**
-     * 🗑️ Vollständige Bildlöschung: S3-Objekte + Metadaten.
+     * Full image deletion: S3 objects + metadata.
      */
     @Transactional
     public void deleteImage(String imageId) {
@@ -224,6 +242,9 @@ public class ImageService {
         log.info("Image deleted: {}", imageId);
     }
 
+    /**
+     * Batch deletion of multiple images with error handling.
+     */
     @Transactional
     @Timed("image.batch.delete")
     @Counted("image.batch.delete.requests")
@@ -247,10 +268,7 @@ public class ImageService {
             default -> 300;
         };
     }
-
-    /**
-     * 🏗️ ImageResponse-Builder mit URL-Generierung.
-     */
+    
     private ImageResponse buildImageResponse(ImageMetadata metadata) {
         return new ImageResponse(
             metadata.getImageId(),

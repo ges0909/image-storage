@@ -2,6 +2,7 @@ package com.valantic.sti.image.testutil;
 
 /**
  * Shared test constants for consistent UUID formats and configuration values across all tests.
+ * Used by both unit tests and integration tests.
  */
 public final class TestConstants {
     

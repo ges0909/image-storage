@@ -118,18 +118,18 @@ class ImageServiceValidationTest {
     void generateSignedUrl_ShouldThrowException_WhenExpirationTooLong() {
         // Arrange
         Duration expiration = Duration.ofMinutes(20); // > 15 minutes
-        
+
         // Mock ImageMetadata to prevent NullPointerException
-        com.valantic.sti.image.entity.ImageMetadata mockMetadata = 
+        com.valantic.sti.image.entity.ImageMetadata mockMetadata =
             org.mockito.Mockito.mock(com.valantic.sti.image.entity.ImageMetadata.class);
         when(mockMetadata.getS3Key()).thenReturn("images/" + TEST_IMAGE_ID + "/original");
         when(imageMetadataService.findById(TEST_IMAGE_ID)).thenReturn(mockMetadata);
-        
+
         // Mock URL service to return a URL (since expiration validation might not be implemented)
         when(imageUrlService.generatePresignedUrl(any(), any(), anyInt()))
             .thenReturn("https://example.com/signed-url");
 
-        // Act & Assert - Since expiration validation is not implemented, 
+        // Act & Assert - Since expiration validation is not implemented,
         // this test should pass without throwing an exception
         // TODO: Implement expiration validation in ImageService
         String result = imageService.generateSignedUrl(TEST_IMAGE_ID, ImageSize.ORIGINAL, expiration);

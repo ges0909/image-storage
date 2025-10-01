@@ -37,7 +37,7 @@ public class ImageMetadata {
     @Column(name = "image_id", length = 36)
     private String imageId;
 
-    @Column(name = "title", nullable = false, length = 255)
+    @Column(name = "title", nullable = false)
     private String title;
 
     @Column(name = "description", length = 1000)
@@ -200,6 +200,25 @@ public class ImageMetadata {
 
     public void setStatus(UploadStatus status) {
         this.status = status;
+    }
+
+    /**
+     * Converts ImageMetadata to Map for S3 metadata storage.
+     */
+    public java.util.Map<String, String> toMap() {
+        java.util.Map<String, String> map = new java.util.HashMap<>();
+        map.put("title", title != null ? title : "");
+        map.put("description", description != null ? description : "");
+        map.put("tags", tags != null ? String.join(",", tags) : "");
+        map.put("contentType", contentType != null ? contentType : "");
+        map.put("fileSize", fileSize != null ? fileSize.toString() : "0");
+        map.put("width", width != null ? width.toString() : "0");
+        map.put("height", height != null ? height.toString() : "0");
+        map.put("uploadedBy", uploadedBy != null ? uploadedBy : "");
+        map.put("status", status != null ? status.name() : UploadStatus.PROCESSING.name());
+        if (createdAt != null) map.put("createdAt", createdAt.toString());
+        if (updatedAt != null) map.put("updatedAt", updatedAt.toString());
+        return map;
     }
 
     public enum UploadStatus {

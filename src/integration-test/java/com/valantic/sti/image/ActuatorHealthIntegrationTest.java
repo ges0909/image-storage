@@ -2,7 +2,6 @@ package com.valantic.sti.image;
 
 import com.valantic.sti.image.config.SecurityConfig;
 import com.valantic.sti.image.repository.ImageMetadataRepository;
-import com.valantic.sti.image.service.AsyncImageService;
 import com.valantic.sti.image.testutil.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,9 +17,6 @@ class ActuatorHealthIntegrationTest extends AbstractIntegrationTest {
 
     @Mock
     private SecurityConfig securityConfig;
-
-    @Mock
-    private AsyncImageService asyncImageService;
 
     @Mock
     private ImageMetadataRepository metadataRepository;

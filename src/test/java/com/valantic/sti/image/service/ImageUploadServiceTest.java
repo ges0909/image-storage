@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,8 +43,6 @@ class ImageUploadServiceTest {
     @Mock
     private ImageValidationService imageValidationService;
     @Mock
-    private AsyncImageService asyncImageService;
-    @Mock
     private MultipartFile multipartFile;
 
     private ImageUploadService imageUploadService;
@@ -54,7 +51,7 @@ class ImageUploadServiceTest {
     void setUp() {
         imageUploadService = new ImageUploadService(
             s3StorageService, imageProcessingService, imageMetadataService,
-            imageUrlService, imageValidationService, asyncImageService
+            imageUrlService, imageValidationService
         );
     }
 
@@ -118,7 +115,7 @@ class ImageUploadServiceTest {
                 .thenReturn(createMockImageMetadata());
 
             doThrow(new RuntimeException("S3 upload failed"))
-                .when(s3StorageService).uploadImage(anyString(), any(byte[].class), anyString(), any(Map.class));
+                .when(s3StorageService).uploadImage(anyString(), any(byte[].class), anyString(), any(ImageMetadata.class));
 
             // When & Then
             assertThatThrownBy(() -> imageUploadService.uploadSync(multipartFile, "title", "desc", null))
@@ -155,7 +152,7 @@ class ImageUploadServiceTest {
 
             verify(imageValidationService).validateImageFile(multipartFile);
             verify(imageMetadataService).save(any(ImageMetadata.class));
-            verify(asyncImageService).uploadImage(anyString(), eq(imageData), eq("image/jpeg"), any(ImageMetadata.class));
+            verify(s3StorageService).uploadImageAsync(anyString(), eq(imageData), eq("image/jpeg"), any(ImageMetadata.class));
         }
 
         @Test

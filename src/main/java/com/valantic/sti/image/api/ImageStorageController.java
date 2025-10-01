@@ -1,6 +1,13 @@
 package com.valantic.sti.image.api;
 
-import com.valantic.sti.image.model.*;
+import com.valantic.sti.image.model.ImageAnalytics;
+import com.valantic.sti.image.model.ImageResponse;
+import com.valantic.sti.image.model.ImageSize;
+import com.valantic.sti.image.model.ImageStats;
+import com.valantic.sti.image.model.ImageUpdateRequest;
+import com.valantic.sti.image.model.ImageVersion;
+import com.valantic.sti.image.model.SearchRequest;
+import com.valantic.sti.image.model.SearchResponse;
 import com.valantic.sti.image.service.ImageService;
 import com.valantic.sti.image.validation.ValidImageFile;
 import com.valantic.sti.image.validation.ValidUUID;
@@ -11,15 +18,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
@@ -29,16 +45,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/images")
-@Tag(name = "Image Storage", description = "🖼️ Secure image storage and management API")
-public class ImageController {
+@Tag(name = "Image Storage", description = "Secure image storage and management API")
+public class ImageStorageController {
 
     private final ImageService imageService;
 
-    public ImageController(ImageService imageService) {
+    public ImageStorageController(ImageService imageService) {
         this.imageService = imageService;
     }
-
-    // 📤 Upload & Management
 
     /**
      * Uploads a new image with optional metadata and tags.
@@ -51,8 +65,7 @@ public class ImageController {
      */
     @Operation(summary = "Upload Image", description = "Upload a new image with optional metadata")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Image uploaded successfully",
-            content = @Content(schema = @Schema(implementation = ImageResponse.class))),
+        @ApiResponse(responseCode = "201", description = "Image uploaded successfully", content = @Content(schema = @Schema(implementation = ImageResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid file or parameters"),
         @ApiResponse(responseCode = "413", description = "File too large")
     })
@@ -69,6 +82,38 @@ public class ImageController {
 
         ImageResponse response = imageService.uploadImage(file, title, description, tags);
         return ResponseEntity.status(HttpStatus.CREATED)
+            .location(URI.create("/api/images/" + response.id()))
+            .body(response);
+    }
+
+    /**
+     * Uploads a large image asynchronously with immediate response.
+     *
+     * @param file        the image file to upload (optimized for 10-100MB files)
+     * @param title       optional image title
+     * @param description optional image description
+     * @param tags        optional list of tags for categorization
+     * @return immediate response with image ID, processing continues in background
+     */
+    @Operation(summary = "Upload Image Async", description = "Upload large image with async processing")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "202", description = "Image upload accepted, processing in background", content = @Content(schema = @Schema(implementation = ImageResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid file or parameters"),
+        @ApiResponse(responseCode = "413", description = "File too large")
+    })
+    @PostMapping(value = "/async", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImageResponse> uploadImageAsync(
+        @Parameter(description = "Image file to upload (10-100MB optimized)", required = true)
+        @RequestParam("file") @ValidImageFile MultipartFile file,
+        @Parameter(description = "Image title")
+        @RequestParam(required = false) String title,
+        @Parameter(description = "Image description")
+        @RequestParam(required = false) String description,
+        @Parameter(description = "Image tags")
+        @RequestParam(required = false) List<String> tags) {
+
+        ImageResponse response = imageService.uploadImageAsync(file, title, description, tags);
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
             .location(URI.create("/api/images/" + response.id()))
             .body(response);
     }
@@ -120,7 +165,7 @@ public class ImageController {
      * Generates a time-limited signed URL for secure image download.
      *
      * @param imageId           the UUID of the image
-     * @param size              the desired image size (ORIGINAL, LARGE, MEDIUM, SMALL, THUMBNAIL)
+     * @param size              the desired image size (ORIGINAL, THUMBNAIL_150, THUMBNAIL_300, THUMBNAIL_600)
      * @param expirationMinutes URL validity period (1-15 minutes, default 15)
      * @return signed download URL with expiration info
      */
@@ -142,7 +187,7 @@ public class ImageController {
      * Gets a public thumbnail URL for the specified image size.
      *
      * @param imageId the UUID of the image
-     * @param size    the thumbnail size (SMALL, MEDIUM, LARGE)
+     * @param size    the thumbnail size (THUMBNAIL_150, THUMBNAIL_300, THUMBNAIL_600)
      * @return public thumbnail URL (no expiration)
      */
     @GetMapping("/{imageId}/thumbnails/{size}")
@@ -294,5 +339,26 @@ public class ImageController {
     public ResponseEntity<ImageAnalytics> getImageAnalytics(@PathVariable @ValidUUID String imageId) {
         ImageAnalytics analytics = imageService.getImageAnalytics(imageId);
         return ResponseEntity.ok(analytics);
+    }
+
+    /**
+     * Deletes multiple images in a single batch operation for improved performance.
+     *
+     * @param imageIds list of image UUIDs to delete (1-100 images)
+     * @return empty response with 204 No Content status
+     */
+    @Operation(summary = "Batch Delete Images", description = "Delete multiple images in a single operation")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Images deleted successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or too many images")
+    })
+    @DeleteMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> batchDeleteImages(
+        @Parameter(description = "List of image IDs to delete (max 100)")
+        @RequestBody @Valid @Size(min = 1, max = 100) List<@Pattern(regexp = "[a-fA-F0-9-]{36}", message = "Invalid UUID format") String> imageIds) {
+
+        imageService.batchDeleteImages(imageIds);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -40,6 +40,10 @@ public class ImageProcessingService {
         }
     }
 
+    /**
+     * Generates thumbnails in all configured sizes for an image.
+     * Each thumbnail is uploaded to S3 as WebP with 80% quality.
+     */
     public void generateThumbnails(String imageId, byte[] originalData, String contentType) {
         for (int size : imageProperties.thumbnailSizes()) {
             generateThumbnail(imageId, originalData, size);

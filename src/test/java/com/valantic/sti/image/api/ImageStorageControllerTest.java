@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -42,10 +43,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ImageController.class)
-@ContextConfiguration(classes = {ImageController.class, ImageControllerTest.TestConfig.class})
+@WebMvcTest(ImageStorageController.class)
+@ContextConfiguration(classes = {ImageStorageController.class, ImageStorageControllerTest.TestConfig.class})
 @Import(TestSecurityConfig.class)
-class ImageControllerTest {
+class ImageStorageControllerTest {
 
     private static final String VALID_UUID = "12345678-1234-1234-1234-123456789012";
     private static final String VERSION_UUID = "87654321-4321-4321-4321-210987654321";
@@ -435,6 +436,36 @@ class ImageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(VALID_UUID))
                 .andExpect(jsonPath("$.title").value("Restored Image"));
+        }
+    }
+
+    @Nested
+    class BatchOperations {
+        @Test
+        void batchDeleteImages_ShouldReturn204_WhenValidRequest() throws Exception {
+            List<String> imageIds = List.of(
+                "12345678-1234-1234-1234-123456789012",
+                "87654321-4321-4321-4321-210987654321"
+            );
+
+            mockMvc.perform(delete("/api/images/batch")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(imageIds)))
+                .andExpect(status().isNoContent());
+
+            verify(imageService).batchDeleteImages(imageIds);
+        }
+
+        @Test
+        void batchDeleteImages_ShouldReturn400_WhenTooManyImages() throws Exception {
+            List<String> imageIds = java.util.stream.IntStream.range(0, 101)
+                .mapToObj(i -> "12345678-1234-1234-1234-12345678901" + String.format("%01d", i % 10))
+                .toList();
+
+            mockMvc.perform(delete("/api/images/batch")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(imageIds)))
+                .andExpect(status().isBadRequest());
         }
     }
 }

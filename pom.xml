@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.0</version>
+    <version>3.3.6</version>
     <relativePath/>
   </parent>
 
@@ -17,21 +17,11 @@
   <packaging>jar</packaging>
 
   <properties>
-    <!-- Java Version -->
     <java.version>21</java.version>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-
-    <!-- Dependency Versions -->
     <aws.version>2.34.3</aws.version>
     <springdoc.version>2.6.0</springdoc.version>
     <thumbnailator.version>0.4.20</thumbnailator.version>
     <testcontainers.version>1.21.3</testcontainers.version>
-    <commons-compress.version>1.27.1</commons-compress.version>
-    <mockito.version>5.20.0</mockito.version>
-    <maven-wrapper.version>3.2.0</maven-wrapper.version>
-    <maven.version>3.9.6</maven.version>
-    <postgresql.version>42.7.8</postgresql.version>
   </properties>
 
   <dependencyManagement>
@@ -51,12 +41,7 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- Security Fix: Override vulnerable commons-compress -->
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons-compress.version}</version>
-      </dependency>
+
     </dependencies>
   </dependencyManagement>
 
@@ -188,67 +173,14 @@
 
   <build>
     <plugins>
-      <!-- Fügt Integration Test Verzeichnis hinzu -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>add-integration-test-sources</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>add-test-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>src/integration-test/java</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+
+
       <!-- Spring Boot Maven Plugin -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
-      <!-- Unit Tests mit Surefire -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- -Xshare:off deaktiviert Class Data Sharing um Konflikte mit Mockito Agent zu vermeiden -->
-          <!-- Mockito Agent modifiziert Bootstrap Classpath, was CDS-Warnungen in Java 21+ auslöst -->
-          <argLine>-Xshare:off
-            -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
-          </argLine>
-        </configuration>
-      </plugin>
-      <!-- Integration Tests mit Failsafe -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <includes>
-            <include>**/*IT.java</include>
-            <include>**/*IntegrationTest.java</include>
-          </includes>
-          <!-- -Xshare:off verhindert JVM-Warnung: "Sharing is only supported for boot loader classes" -->
-          <!-- Notwendig wegen Mockito Agent Kompatibilität mit Java 21 Class Data Sharing -->
-          <argLine>-Xshare:off
-            -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
-          </argLine>
-        </configuration>
-      </plugin>
-      <!-- Maven Wrapper Plugin -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-wrapper-plugin</artifactId>
-        <version>${maven-wrapper.version}</version>
-        <configuration>
-          <mavenVersion>${maven.version}</mavenVersion>
-        </configuration>
-      </plugin>
+
       <!-- Flyway Maven Plugin -->
       <plugin>
         <groupId>org.flywaydb</groupId>
@@ -265,7 +197,7 @@
           <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
+            <version>42.7.8</version>
           </dependency>
         </dependencies>
       </plugin>
