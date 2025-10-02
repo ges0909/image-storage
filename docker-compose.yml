@@ -1,5 +1,10 @@
 # 🐳 Docker Compose for Local Development
 
+# 🔧 Variables (only multi-use)
+x-common-variables: &common-variables
+  MINIO_USER: &minio_user "devuser"
+  MINIO_PASSWORD: &minio_password "devpassword123"
+
 services:
 
   # MinIO for S3-compatible storage
@@ -10,8 +15,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=devuser
-      - MINIO_ROOT_PASSWORD=devpassword123
+      - MINIO_ROOT_USER=*minio_user
+      - MINIO_ROOT_PASSWORD=*minio_password
       - MINIO_REGION_NAME=eu-central-1
     command: server /data --console-address ":9001"
     volumes:
@@ -50,14 +55,16 @@ services:
       - KC_HOSTNAME_STRICT=false
       - KC_HOSTNAME_STRICT_HTTPS=false
       - KC_HTTP_ENABLED=true
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json
     entrypoint:
       - /bin/bash
       - -c
       - |
         echo "Waiting for database to be ready..."
         sleep 10
-        echo "Starting Keycloak..."
-        exec /opt/keycloak/bin/kc.sh start-dev
+        echo "Starting Keycloak with realm import..."
+        exec /opt/keycloak/bin/kc.sh start-dev --import-realm
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,7 +73,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 8
-      start_period: 60s
+      start_period: 30s
 
   # Redis Cache
   redis:
@@ -109,8 +116,8 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev,keycloak
-      - AWS_ACCESS_KEY_ID=devuser
-      - AWS_SECRET_ACCESS_KEY=devpassword123
+      - AWS_ACCESS_KEY_ID=*minio_user
+      - AWS_SECRET_ACCESS_KEY=*minio_password
       - AWS_REGION=eu-central-1
       - AWS_S3_ENDPOINT=http://minio:9000
       - IMAGE_BUCKET_NAME=dev-images-bucket

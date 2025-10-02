@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.net.URI;
 
@@ -82,5 +83,12 @@ public class S3Config {
         // Für echtes AWS S3: Virtual Hosted Style (Standard)
 
         return builder.build();
+    }
+
+    @Bean
+    public S3TransferManager s3TransferManager(S3AsyncClient s3AsyncClient) {
+        return S3TransferManager.builder()
+            .s3Client(s3AsyncClient)
+            .build();
     }
 }

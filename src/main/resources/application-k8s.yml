@@ -1,12 +1,19 @@
 # ☸️ Kubernetes-Ready Configuration
-app:
-  image:
-    bucket-name: ${S3_BUCKET_NAME:image-storage-images}
-    thumbnail-bucket-name: ${S3_THUMBNAIL_BUCKET:image-storage-thumbnails}
-    kms-key-id: ${KMS_KEY_ID:alias/image-storage-key}
-    cloud-front-domain: ${CLOUDFRONT_DOMAIN:}
-    max-file-size-bytes: ${MAX_FILE_SIZE_BYTES:10485760}
-    region: ${AWS_REGION:eu-central-1}
+image:
+  bucket-name: ${S3_BUCKET_NAME:image-storage-images}
+  thumbnail-bucket-name: ${S3_THUMBNAIL_BUCKET:image-storage-thumbnails}
+  kms-key-id: ${KMS_KEY_ID:alias/image-storage-key}
+  cloudfront-domain: ${CLOUDFRONT_DOMAIN:}
+  max-file-size: ${MAX_FILE_SIZE_BYTES:10485760}
+  region: ${AWS_REGION:eu-central-1}
+  url-expiration-minutes: ${URL_EXPIRATION_MINUTES:15}
+  thumbnail-sizes: [150, 300, 600]
+  supported-types:
+    - image/jpeg
+    - image/png
+    - image/webp
+  max-results: ${MAX_RESULTS:1000}
+  key-prefix: ${KEY_PREFIX:images}
 
 # 🔒 Security Configuration
 spring:
