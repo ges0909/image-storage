@@ -30,17 +30,17 @@ public class ImageUrlService {
 
         String thumbnail150 = generatePresignedUrl(
             imageProperties.thumbnailBucketName(),
-            "thumbnails/" + imageId + "/150.webp"
+            "thumbnails/" + imageId + "/150.jpg"
         );
 
         String thumbnail300 = generatePresignedUrl(
             imageProperties.thumbnailBucketName(),
-            "thumbnails/" + imageId + "/300.webp"
+            "thumbnails/" + imageId + "/300.jpg"
         );
 
         String thumbnail600 = generatePresignedUrl(
             imageProperties.thumbnailBucketName(),
-            "thumbnails/" + imageId + "/600.webp"
+            "thumbnails/" + imageId + "/600.jpg"
         );
 
         return new ImageUrls(originalUrl, thumbnail150, thumbnail300, thumbnail600);

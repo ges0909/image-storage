@@ -14,7 +14,7 @@ import java.util.Set;
 public record ImageProperties(
     @NotBlank String bucketName,
     @NotBlank String thumbnailBucketName,
-    @NotBlank String kmsKeyId,
+    String kmsKeyId,
     String cloudfrontDomain,
     @Positive long maxFileSize,
     @NotBlank String region,

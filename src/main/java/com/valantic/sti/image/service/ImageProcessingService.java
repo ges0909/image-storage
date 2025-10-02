@@ -31,7 +31,8 @@ public class ImageProcessingService {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageData)) {
             BufferedImage image = ImageIO.read(bis);
             if (image == null) {
-                throw new ImageProcessingException("Invalid image format");
+                log.warn("No valid image data found - possibly invalid format or no image data");
+                throw new ImageProcessingException("Invalid image format or no image data present");
             }
             return new ImageDimensions(image.getWidth(), image.getHeight());
         } catch (IOException e) {
@@ -42,7 +43,7 @@ public class ImageProcessingService {
 
     /**
      * Generates thumbnails in all configured sizes for an image.
-     * Each thumbnail is uploaded to S3 as WebP with 80% quality.
+     * Each thumbnail is uploaded to S3 as JPEG with 80% quality.
      */
     public void generateThumbnails(String imageId, byte[] originalData, String contentType) {
         for (int size : imageProperties.thumbnailSizes()) {
@@ -54,15 +55,22 @@ public class ImageProcessingService {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(originalData);
              ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
 
+            // Verify image data is readable before processing
+            BufferedImage testImage = ImageIO.read(new ByteArrayInputStream(originalData));
+            if (testImage == null) {
+                log.warn("Cannot generate thumbnail - invalid image data for: {}", imageId);
+                throw new ImageProcessingException("Invalid image data for thumbnail generation");
+            }
+
             Thumbnails.of(bis)
                 .size(size, size)
                 .keepAspectRatio(true)
-                .outputFormat("webp")
+                .outputFormat("jpg")
                 .outputQuality(0.8)
                 .toOutputStream(bos);
 
-            String thumbnailKey = "thumbnails/" + imageId + "/" + size + ".webp";
-            s3StorageService.uploadThumbnail(thumbnailKey, bos.toByteArray(), "image/webp");
+            String thumbnailKey = "thumbnails/" + imageId + "/" + size + ".jpg";
+            s3StorageService.uploadThumbnail(thumbnailKey, bos.toByteArray(), "image/jpeg");
 
             log.debug("Generated thumbnail {}x{} for image: {}", size, size, imageId);
 

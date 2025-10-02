@@ -12,7 +12,7 @@ import java.util.Set;
 public class ImageFileValidator implements ConstraintValidator<ValidImageFile, MultipartFile> {
 
     private static final Logger log = LoggerFactory.getLogger(ImageFileValidator.class);
-    
+
     private final ImageProperties imageProperties;
     private long maxFileSize;
     private Set<String> allowedContentTypes;

@@ -11,7 +11,11 @@ image:
   supported-types:
     - image/jpeg
     - image/png
-    - image/webp
+    - image/gif
+    - image/tiff
+    - image/bmp
+    - image/hif
+    - application/dicom
   max-results: ${MAX_RESULTS:1000}
   key-prefix: ${KEY_PREFIX:images}
 

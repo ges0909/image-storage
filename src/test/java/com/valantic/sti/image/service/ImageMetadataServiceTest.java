@@ -74,7 +74,7 @@ class ImageMetadataServiceTest {
         ImageMetadata metadata = createImageMetadata("test-id");
         Page<ImageMetadata> page = new PageImpl<>(List.of(metadata));
         
-        when(metadataRepository.findBySearchCriteria(anyString(), any(), any(Pageable.class)))
+        when(metadataRepository.findBySearchCriteria(anyString(), any(), any(), any(Pageable.class)))
             .thenReturn(page);
 
         // Act

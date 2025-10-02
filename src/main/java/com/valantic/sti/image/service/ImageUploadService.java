@@ -91,6 +91,8 @@ public class ImageUploadService {
             } else {
                 s3StorageService.uploadImage(originalKey, imageData, file.getContentType(), metadata);
                 imageProcessingService.generateThumbnails(imageId, imageData, file.getContentType());
+                metadata.setStatus(ImageMetadata.UploadStatus.COMPLETED);
+                imageMetadataService.save(metadata);
                 log.info("Image uploaded successfully: {}", imageId);
             }
 

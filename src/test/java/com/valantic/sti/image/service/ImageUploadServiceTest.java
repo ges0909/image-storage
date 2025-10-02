@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -85,7 +86,7 @@ class ImageUploadServiceTest {
             verify(imageValidationService).validateInputs("title", "desc", List.of("tag"));
             verify(s3StorageService).uploadImage(anyString(), eq(imageData), eq("image/jpeg"), any());
             verify(imageProcessingService).generateThumbnails(anyString(), eq(imageData), eq("image/jpeg"));
-            verify(imageMetadataService).save(any(ImageMetadata.class));
+            verify(imageMetadataService, times(2)).save(any(ImageMetadata.class));
         }
 
         @Test

@@ -49,6 +49,7 @@ public class ImageMetadataService {
         Page<ImageMetadata> page = metadataRepository.findBySearchCriteria(
             request.query(),
             request.contentType(),
+            request.tags(),
             pageable
         );
 

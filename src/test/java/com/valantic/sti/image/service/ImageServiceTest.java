@@ -249,7 +249,7 @@ class ImageServiceTest {
 
             // Then
             assertThat(result).isEqualTo("https://thumbnail-url.com");
-            verify(imageUrlService).generatePresignedUrl(eq("test-thumbnails"), eq("thumbnails/test-image-id/300.webp"), eq(5));
+            verify(imageUrlService).generatePresignedUrl(eq("test-thumbnails"), eq("thumbnails/test-image-id/300.jpg"), eq(5));
         }
 
         @Test
@@ -265,7 +265,7 @@ class ImageServiceTest {
         @DisplayName("Should generate thumbnail URL")
         void getThumbnailUrl_ShouldGenerateThumbnailUrl() {
             // Given
-            when(imageUrlService.generatePresignedUrl(eq("test-thumbnails"), eq("thumbnails/test-id/300.webp")))
+            when(imageUrlService.generatePresignedUrl(eq("test-thumbnails"), eq("thumbnails/test-id/300.jpg")))
                 .thenReturn("https://thumbnail.com");
 
             // When

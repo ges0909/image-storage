@@ -123,7 +123,7 @@ public class ImageService {
         ImageMetadata metadata = imageMetadataService.findById(imageId);
         String key = size == ImageSize.ORIGINAL
             ? metadata.getS3Key()
-            : "thumbnails/" + imageId + "/" + getSizePixels(size) + ".webp";
+            : "thumbnails/" + imageId + "/" + getSizePixels(size) + ".jpg";
         String bucketName = size == ImageSize.ORIGINAL ?
             imageProperties.bucketName() : imageProperties.thumbnailBucketName();
         return imageUrlService.generatePresignedUrl(bucketName, key, (int) expiration.toMinutes());
@@ -136,7 +136,7 @@ public class ImageService {
         if (size == ImageSize.ORIGINAL) {
             throw new IllegalArgumentException("Use generateSignedUrl for original images");
         }
-        String key = "thumbnails/" + imageId + "/" + getSizePixels(size) + ".webp";
+        String key = "thumbnails/" + imageId + "/" + getSizePixels(size) + ".jpg";
         return imageUrlService.generatePresignedUrl(imageProperties.thumbnailBucketName(), key);
     }
 
@@ -261,6 +261,19 @@ public class ImageService {
         log.info("Batch deleted {} images", imageIds.size());
     }
 
+    /**
+     * Checks if a user is the owner of an image.
+     * Used for Spring Security @PreAuthorize.
+     */
+    public boolean isOwner(String imageId, String username) {
+        try {
+            ImageMetadata metadata = imageMetadataService.findById(imageId);
+            return metadata.getUploadedBy().equals(username);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private int getSizePixels(ImageSize size) {
         return switch (size) {
             case THUMBNAIL_150 -> 150;
@@ -268,7 +281,7 @@ public class ImageService {
             default -> 300;
         };
     }
-    
+
     private ImageResponse buildImageResponse(ImageMetadata metadata) {
         return new ImageResponse(
             metadata.getImageId(),

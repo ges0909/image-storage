@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -23,13 +22,15 @@ public interface ImageMetadataRepository extends JpaRepository<ImageMetadata, St
 
     Page<ImageMetadata> findByFileSizeBetween(Long minSize, Long maxSize, Pageable pageable);
 
-    @Query("SELECT i FROM ImageMetadata i WHERE " +
-           "(:title IS NULL OR LOWER(i.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
-           "(:contentType IS NULL OR i.contentType = :contentType) AND " +
-           "i.status = 'COMPLETED'")
+    @Query("SELECT DISTINCT i FROM ImageMetadata i LEFT JOIN i.tags t WHERE " +
+        "(:title IS NULL OR LOWER(i.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
+        "(:contentType IS NULL OR i.contentType = :contentType) AND " +
+        "(:tags IS NULL OR t IN :tags) AND " +
+        "i.status = 'COMPLETED'")
     Page<ImageMetadata> findBySearchCriteria(
         @Param("title") String title,
         @Param("contentType") String contentType,
+        @Param("tags") List<String> tags,
         Pageable pageable
     );
 

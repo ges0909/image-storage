@@ -1,75 +1,69 @@
 package com.valantic.sti.image;
 
-import com.valantic.sti.image.config.SecurityConfig;
-import com.valantic.sti.image.repository.ImageMetadataRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.valantic.sti.image.testutil.AbstractIntegrationTest;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
+@DisplayName("Actuator Health Endpoints")
 class ActuatorHealthIntegrationTest extends AbstractIntegrationTest {
 
-    @Mock
-    private SecurityConfig securityConfig;
+    @Autowired
+    private TestRestTemplate restTemplate;
 
-    @Mock
-    private ImageMetadataRepository metadataRepository;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @LocalServerPort
-    private int port;
+    @Nested
+    @DisplayName("Health Endpoints")
+    class HealthEndpoints {
 
-    private RestClient restClient;
+        @Test
+        @DisplayName("Should return overall health status UP")
+        void overallHealth_ShouldReturnUp() throws Exception {
+            ResponseEntity<String> response = restTemplate.getForEntity("/actuator/health", String.class);
 
-    @BeforeEach
-    void setUp() {
-        restClient = RestClient.builder()
-            .baseUrl("http://localhost:" + port)
-            .build();
-    }
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    @Test
-    void actuatorHealth_ShouldReturnHealthStatus() {
-        try {
-            String response = restClient.get()
-                .uri("/actuator/health")
-                .retrieve()
-                .body(String.class);
+            JsonNode health = objectMapper.readTree(response.getBody());
+            assertThat(health.get("status").asText()).isEqualTo("UP");
+            assertThat(health.has("components")).isTrue();
+        }
 
-            assertThat(response).contains("\"status\":");
-        } catch (RestClientException e) {
-            // Accept 503 Service Unavailable if Redis is down
-            assertThat(e.getMessage()).containsAnyOf("503", "SERVICE_UNAVAILABLE");
+        @Test
+        @DisplayName("Should return S3 health status")
+        void s3Health_ShouldReturnStatus() throws Exception {
+            ResponseEntity<String> response = restTemplate.getForEntity("/actuator/health/s3", String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            JsonNode s3Health = objectMapper.readTree(response.getBody());
+            assertThat(s3Health.get("status").asText()).isIn("UP", "DOWN");
+            assertThat(s3Health.has("details")).isTrue();
+            assertThat(s3Health.get("details").get("bucket").asText()).isEqualTo("test-bucket");
         }
     }
 
-    @Test
-    void actuatorHealthS3_ShouldReturnS3HealthStatus() {
-        try {
-            String response = restClient.get()
-                .uri("/actuator/health/s3")
-                .retrieve()
-                .body(String.class);
+    @Nested
+    @DisplayName("Info Endpoint")
+    class InfoEndpoint {
 
-            assertThat(response).contains("\"status\":");
-        } catch (RestClientException e) {
-            // Accept 503 Service Unavailable for S3 health check
-            assertThat(e.getMessage()).containsAnyOf("503", "SERVICE_UNAVAILABLE");
+        @Test
+        @DisplayName("Should return application info")
+        void applicationInfo_ShouldReturnInfo() {
+            ResponseEntity<String> response = restTemplate.getForEntity("/actuator/info", String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
         }
-    }
-
-    @Test
-    void actuatorInfo_ShouldReturnApplicationInfo() {
-        String response = restClient.get()
-            .uri("/actuator/info")
-            .retrieve()
-            .body(String.class);
-
-        assertThat(response).isNotNull();
     }
 }

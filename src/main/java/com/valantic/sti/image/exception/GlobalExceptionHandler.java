@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -45,7 +46,10 @@ public class GlobalExceptionHandler {
             .body(createErrorResponse("Invalid input", ex.getMessage(), HttpStatus.BAD_REQUEST));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler({
+        MethodArgumentNotValidException.class,
+        HandlerMethodValidationException.class
+    })
     public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         log.warn("Method argument validation failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

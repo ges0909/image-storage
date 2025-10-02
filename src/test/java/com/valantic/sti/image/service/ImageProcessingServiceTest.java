@@ -1,6 +1,7 @@
 package com.valantic.sti.image.service;
 
 import com.valantic.sti.image.ImageProperties;
+import com.valantic.sti.image.exception.ImageProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 🧪 Unit Tests für ImageProcessingService - fokussiert auf Bildverarbeitung.
+ * Unit tests for ImageProcessingService - focused on image processing.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ImageProcessingService Unit Tests")
@@ -66,7 +67,7 @@ class ImageProcessingServiceTest {
             // When & Then - Service throws ImageProcessingException with "Invalid image format"
             assertThatThrownBy(() -> imageProcessingService.getImageDimensions(invalidData))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Invalid image format");
+                .hasMessage("Invalid image format or no image data present");
         }
 
         @Test
@@ -83,7 +84,7 @@ class ImageProcessingServiceTest {
             // When & Then - Empty data causes "Invalid image format" error
             assertThatThrownBy(() -> imageProcessingService.getImageDimensions(new byte[0]))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Invalid image format");
+                .hasMessage("Invalid image format or no image data present");
         }
     }
 
@@ -96,8 +97,8 @@ class ImageProcessingServiceTest {
         void generateThumbnails_ShouldFailWithWebPNotSupported() {
             // When & Then - Thumbnailator doesn't support WebP output
             assertThatThrownBy(() -> imageProcessingService.generateThumbnails(TEST_IMAGE_ID, TEST_IMAGE_DATA, JPEG_CONTENT_TYPE))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Specified format is not supported: webp");
+                .isInstanceOf(ImageProcessingException.class)
+                .hasMessage("Invalid image data for thumbnail generation");
         }
 
         @Test
@@ -105,8 +106,8 @@ class ImageProcessingServiceTest {
         void generateThumbnails_ShouldHandleEmptyImageId() {
             // When & Then - Service doesn't validate, goes to thumbnail generation
             assertThatThrownBy(() -> imageProcessingService.generateThumbnails("", new byte[1], "image/jpeg"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Specified format is not supported: webp");
+                .isInstanceOf(ImageProcessingException.class)
+                .hasMessage("Invalid image data for thumbnail generation");
         }
 
         @Test
@@ -122,8 +123,8 @@ class ImageProcessingServiceTest {
         void generateThumbnails_ShouldHandleEmptyContentType() {
             // When & Then - Service doesn't validate, goes to thumbnail generation
             assertThatThrownBy(() -> imageProcessingService.generateThumbnails("id", new byte[1], ""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Specified format is not supported: webp");
+                .isInstanceOf(ImageProcessingException.class)
+                .hasMessage("Invalid image data for thumbnail generation");
         }
 
         @Test
@@ -134,8 +135,8 @@ class ImageProcessingServiceTest {
 
             // When & Then - All formats fail because WebP output is not supported
             assertThatThrownBy(() -> imageProcessingService.generateThumbnails("id", imageData, "image/bmp"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Specified format is not supported: webp");
+                .isInstanceOf(ImageProcessingException.class)
+                .hasMessage("Invalid image data for thumbnail generation");
         }
     }
 

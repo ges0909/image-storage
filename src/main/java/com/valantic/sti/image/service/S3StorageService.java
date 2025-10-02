@@ -60,18 +60,20 @@ public class S3StorageService {
 
     public void uploadImage(String key, byte[] data, String contentType, ImageMetadata metadata) {
         try {
-            s3Client.putObject(
-                PutObjectRequest.builder()
-                    .bucket(imageProperties.bucketName())
-                    .key(key)
-                    .contentType(contentType)
-                    .acl(ObjectCannedACL.PRIVATE)
-                    .serverSideEncryption(ServerSideEncryption.AWS_KMS)
-                    .ssekmsKeyId(imageProperties.kmsKeyId())
-                    .metadata(metadata.toMap())
-                    .build(),
-                RequestBody.fromBytes(data)
-            );
+            PutObjectRequest.Builder requestBuilder = PutObjectRequest.builder()
+                .bucket(imageProperties.bucketName())
+                .key(key)
+                .contentType(contentType)
+                .acl(ObjectCannedACL.PRIVATE)
+                .metadata(metadata.toMap());
+
+            // Only apply KMS encryption if KMS key ID is provided and not empty
+            if (imageProperties.kmsKeyId() != null && !imageProperties.kmsKeyId().trim().isEmpty()) {
+                requestBuilder.serverSideEncryption(ServerSideEncryption.AWS_KMS)
+                    .ssekmsKeyId(imageProperties.kmsKeyId());
+            }
+
+            s3Client.putObject(requestBuilder.build(), RequestBody.fromBytes(data));
             log.debug("Uploaded to S3: {}", key);
         } catch (S3Exception e) {
             log.error("S3 upload failed for key: {}", key, e);
@@ -106,16 +108,21 @@ public class S3StorageService {
     public void uploadImageAsync(String imageId, byte[] imageData, String contentType, ImageMetadata metadata) {
         String key = "images/" + imageId + "/original";
 
+        PutObjectRequest.Builder putRequestBuilder = PutObjectRequest.builder()
+            .bucket(imageProperties.bucketName())
+            .key(key)
+            .contentType(contentType)
+            .acl(ObjectCannedACL.PRIVATE)
+            .metadata(metadata.toMap());
+
+        // Only apply KMS encryption if KMS key ID is provided and not empty
+        if (imageProperties.kmsKeyId() != null && !imageProperties.kmsKeyId().trim().isEmpty()) {
+            putRequestBuilder.serverSideEncryption(ServerSideEncryption.AWS_KMS)
+                .ssekmsKeyId(imageProperties.kmsKeyId());
+        }
+
         UploadRequest uploadRequest = UploadRequest.builder()
-            .putObjectRequest(PutObjectRequest.builder()
-                .bucket(imageProperties.bucketName())
-                .key(key)
-                .contentType(contentType)
-                .acl(ObjectCannedACL.PRIVATE)
-                .serverSideEncryption(ServerSideEncryption.AWS_KMS)
-                .ssekmsKeyId(imageProperties.kmsKeyId())
-                .metadata(metadata.toMap())
-                .build())
+            .putObjectRequest(putRequestBuilder.build())
             .build();
 
         Upload upload = transferManager.upload(uploadRequest);
@@ -205,18 +212,21 @@ public class S3StorageService {
 
     public void restoreVersion(String key, String versionId) {
         try {
-            s3Client.copyObject(
-                CopyObjectRequest.builder()
-                    .sourceBucket(imageProperties.bucketName())
-                    .sourceKey(key)
-                    .sourceVersionId(versionId)
-                    .destinationBucket(imageProperties.bucketName())
-                    .destinationKey(key)
-                    .acl(ObjectCannedACL.PRIVATE)
-                    .serverSideEncryption(ServerSideEncryption.AWS_KMS)
-                    .ssekmsKeyId(imageProperties.kmsKeyId())
-                    .build()
-            );
+            CopyObjectRequest.Builder copyRequestBuilder = CopyObjectRequest.builder()
+                .sourceBucket(imageProperties.bucketName())
+                .sourceKey(key)
+                .sourceVersionId(versionId)
+                .destinationBucket(imageProperties.bucketName())
+                .destinationKey(key)
+                .acl(ObjectCannedACL.PRIVATE);
+
+            // Only apply KMS encryption if KMS key ID is provided and not empty
+            if (imageProperties.kmsKeyId() != null && !imageProperties.kmsKeyId().trim().isEmpty()) {
+                copyRequestBuilder.serverSideEncryption(ServerSideEncryption.AWS_KMS)
+                    .ssekmsKeyId(imageProperties.kmsKeyId());
+            }
+
+            s3Client.copyObject(copyRequestBuilder.build());
             log.info("Restored version {} for key: {}", versionId, key);
         } catch (S3Exception e) {
             log.error("Failed to restore version {} for key: {}", versionId, key, e);
@@ -230,7 +240,7 @@ public class S3StorageService {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(imageData);
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            String outputFormat = contentType.equals("image/png") ? "png" : "webp";
+            String outputFormat = contentType.equals("image/png") ? "png" : "jpg";
 
             Thumbnails.of(inputStream)
                 .size(size, size)
@@ -240,7 +250,7 @@ public class S3StorageService {
                 .toOutputStream(outputStream);
 
             String thumbnailKey = "images/" + imageId + "/thumbnail_" + size;
-            String thumbnailContentType = outputFormat.equals("webp") ? "image/webp" : contentType;
+            String thumbnailContentType = outputFormat.equals("jpg") ? "image/jpeg" : contentType;
 
             PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(imageProperties.thumbnailBucketName())
