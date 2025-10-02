@@ -27,10 +27,10 @@ spring:
 
 # AWS configuration
 aws:
-  access-key-id: ${AWS_ACCESS_KEY_ID:test}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY:test}
+  accessKeyId: ${AWS_ACCESS_KEY_ID:devuser}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:devpassword123}
   s3:
-    endpoint: ${AWS_S3_ENDPOINT:http://localhost:4566}
+    endpoint: ${AWS_S3_ENDPOINT:http://localhost:9000}
   config:
     validation:
       enabled: false

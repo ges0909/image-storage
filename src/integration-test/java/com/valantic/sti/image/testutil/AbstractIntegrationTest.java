@@ -4,7 +4,7 @@ import com.valantic.sti.image.ImageProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -14,28 +14,30 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
-import java.util.Locale;
+import java.net.URI;
 
 import static com.valantic.sti.image.testutil.TestConstants.*;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 @Testcontainers
 public abstract class AbstractIntegrationTest {
 
     @Container
-    protected static LocalStackContainer localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.0"))
-        .withServices(S3)
-        .withReuse(true); // container-sharing for tests
+    protected static GenericContainer<?> minio = new GenericContainer<>(DockerImageName.parse("minio/minio:latest"))
+        .withExposedPorts(9000)
+        .withEnv("MINIO_ROOT_USER", "testuser")
+        .withEnv("MINIO_ROOT_PASSWORD", "testpassword123")
+        .withCommand("server", "/data")
+        .withReuse(true);
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         // AWS SDK standard properties
-        registry.add("aws.accessKeyId", localstack::getAccessKey);
-        registry.add("aws.secretAccessKey", localstack::getSecretKey);
-        registry.add("aws.region", localstack::getRegion);
+        registry.add("aws.accessKeyId", () -> "testuser");
+        registry.add("aws.secretAccessKey", () -> "testpassword123");
+        registry.add("aws.region", () -> "us-east-1");
 
-        // LocalStack S3 endpoint
-        registry.add("aws.s3.endpoint", () -> localstack.getEndpointOverride(S3).toString());
+        // MinIO S3 endpoint
+        registry.add("aws.s3.endpoint", () -> "http://localhost:" + minio.getMappedPort(9000));
 
         // Disable AWS config validation for tests
         registry.add("aws.config.validation.enabled", () -> "false");
@@ -51,14 +53,15 @@ public abstract class AbstractIntegrationTest {
     @BeforeAll
     static void createTestBuckets() {
         var credentialsProvider = StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey())
+            AwsBasicCredentials.create("testuser", "testpassword123")
         );
-        var region = Region.of(localstack.getRegion().toLowerCase(Locale.ROOT));
+        var region = Region.US_EAST_1;
 
         try (S3Client s3Client = S3Client.builder()
-            .endpointOverride(localstack.getEndpointOverride(S3))
+            .endpointOverride(URI.create("http://localhost:" + minio.getMappedPort(9000)))
             .credentialsProvider(credentialsProvider)
             .region(region)
+            .forcePathStyle(true)
             .build()) {
 
             // Create buckets that the application expects
@@ -76,7 +79,7 @@ public abstract class AbstractIntegrationTest {
             TEST_KMS_KEY,
             TEST_CLOUDFRONT_DOMAIN,
             MAX_FILE_SIZE,
-            localstack.getRegion().toLowerCase(Locale.ROOT),
+            "us-east-1",
             URL_EXPIRATION_MINUTES,
             THUMBNAIL_SIZES,
             java.util.Set.of("image/jpeg", "image/png", "image/webp"),

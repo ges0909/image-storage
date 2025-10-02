@@ -2,30 +2,37 @@
 
 services:
 
-  # LocalStack for S3 simulation
-  localstack:
-    image: localstack/localstack:3.0
-    container_name: image-storage-localstack
+  # MinIO for S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: image-storage-minio
     ports:
-      - "4566:4566"
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      - SERVICES=s3
-      - DEBUG=1
-      - PERSISTENCE=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - S3_SKIP_SIGNATURE_VALIDATION=1
-      - AWS_DEFAULT_REGION=eu-central-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+      - MINIO_ROOT_USER=devuser
+      - MINIO_ROOT_PASSWORD=devpassword123
+      - MINIO_REGION_NAME=eu-central-1
+    command: server /data --console-address ":9001"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./localstack-data:/var/lib/localstack"
-      - "./init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"
+      - minio-data:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:4566/health" ]
-      interval: 30s
-      timeout: 10s
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 3s
       retries: 3
+      start_period: 10s
+
+  # MinIO Client for bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: image-storage-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./init-minio.sh:/init-minio.sh
+    entrypoint: [ "/bin/sh", "/init-minio.sh" ]
 
   # Keycloak Identity Provider
   keycloak:
@@ -102,10 +109,10 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev,keycloak
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_REGION=us-east-1
-      - AWS_S3_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=devuser
+      - AWS_SECRET_ACCESS_KEY=devpassword123
+      - AWS_REGION=eu-central-1
+      - AWS_S3_ENDPOINT=http://minio:9000
       - IMAGE_BUCKET_NAME=dev-images-bucket
       - THUMBNAIL_BUCKET_NAME=dev-thumbnails-bucket
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ImageStorage
@@ -123,7 +130,7 @@ services:
       - KEYCLOAK_USERINFO_URI=http://keycloak:8080/realms/image-storage/protocol/openid-connect/userinfo
       - KEYCLOAK_JWK_URI=http://keycloak:8080/realms/image-storage/protocol/openid-connect/certs
     depends_on:
-      localstack:
+      minio:
         condition: service_healthy
       postgres:
         condition: service_healthy
@@ -139,5 +146,5 @@ services:
       start_period: 60s
 
 volumes:
-  localstack-data:
+  minio-data:
   postgres-data:

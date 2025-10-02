@@ -46,7 +46,6 @@
   </dependencyManagement>
 
   <dependencies>
-
     <!-- Spring Boot Web Starter -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -168,17 +167,54 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
     <plugins>
-
-
       <!-- Spring Boot Maven Plugin -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- Build Helper Plugin for Integration Tests -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-integration-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/integration-test/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Failsafe Plugin for Integration Tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*IntegrationTest.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
       <!-- Flyway Maven Plugin -->

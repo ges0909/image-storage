@@ -111,11 +111,11 @@ docker-compose down -v
 
 ```bash
 # Without authentication (dev profile only)
-docker-compose up postgres redis localstack -d
+docker-compose up postgres redis minio -d
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # With authentication (dev + keycloak profiles)
-docker-compose up postgres redis localstack keycloak -d
+docker-compose up postgres redis minio keycloak -d
 ./init-keycloak.sh
 mvn spring-boot:run -Dspring-boot.run.profiles=dev,keycloak
 ```
@@ -129,8 +129,9 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev,keycloak
 # Run container
 docker run -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=dev \
-  -e AWS_ACCESS_KEY_ID=test \
-  -e AWS_SECRET_ACCESS_KEY=test \
+  -e AWS_ACCESS_KEY_ID=devuser \
+  -e AWS_SECRET_ACCESS_KEY=devpassword123 \
+  -e AWS_S3_ENDPOINT=http://localhost:9000 \
   image-storage:latest
 ```
 
@@ -139,6 +140,7 @@ docker run -p 8080:8080 \
 - **Application**: http://localhost:8080
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
 - **OpenAPI Docs**: http://localhost:8080/api-docs
+- **MinIO Console**: http://localhost:9001 (`devuser/devpassword123`)
 - **Keycloak Admin**: http://localhost:8081 (`admin/admin`)
 - **OAuth2 Login**: http://localhost:8080/oauth2/authorization/keycloak
 
@@ -183,6 +185,9 @@ mvn flyway:validate
 | `IMAGE_BUCKET_NAME`      | S3 bucket for images     | `dev-images-bucket`     |
 | `THUMBNAIL_BUCKET_NAME`  | S3 bucket for thumbnails | `dev-thumbnails-bucket` |
 | `AWS_REGION`             | AWS region               | `eu-central-1`          |
+| `AWS_ACCESS_KEY_ID`      | MinIO access key         | `devuser`               |
+| `AWS_SECRET_ACCESS_KEY`  | MinIO secret key         | `devpassword123`        |
+| `AWS_S3_ENDPOINT`        | MinIO endpoint           | `http://localhost:9000` |
 | `KMS_KEY_ID`             | KMS key for encryption   | `alias/aws/s3`          |
 | `MAX_FILE_SIZE`          | Max upload size (bytes)  | `10485760`              |
 
@@ -362,7 +367,44 @@ kubectl logs -f deployment/image-storage-app -n image-storage
 
 ## 🧪 Integration Tests
 
-Use **Testcontainers** with **LocalStack** for real S3-API tests without AWS costs.
+Use **Testcontainers** with **MinIO** for real S3-API tests without AWS costs.
+
+## 🗄️ MinIO Storage
+
+### **Local S3-Compatible Storage**
+
+MinIO provides high-performance, S3-compatible object storage for development:
+
+- **Performance**: 3x faster than LocalStack
+- **Web Console**: http://localhost:9001 (`devuser/devpassword123`)
+- **S3 API**: Full AWS S3 API compatibility
+- **Bucket Policies**: Configurable access control
+
+### **Bucket Configuration**
+
+- **`dev-images-bucket`**: Private bucket for original images (10-100MB)
+- **`dev-thumbnails-bucket`**: Private bucket for thumbnails (150px, 300px, 600px)
+
+Both buckets are private by default for security. Thumbnails can be made public for CDN optimization if needed.
+
+### **MinIO Client Usage**
+
+```bash
+# Install MinIO client
+brew install minio/stable/mc  # macOS
+
+# Configure alias
+mc alias set local http://localhost:9000 devuser devpassword123
+
+# List buckets
+mc ls local
+
+# Upload test file
+echo "Hello MinIO" | mc pipe local/dev-images-bucket/test.txt
+
+# Download file
+mc cat local/dev-images-bucket/test.txt
+```
 
 ## 🔒 S3 Security Features
 
